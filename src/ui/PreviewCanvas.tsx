@@ -1,13 +1,13 @@
 import { Canvas } from "@react-three/fiber";
 import { OrbitControls } from "@react-three/drei";
 import { useParameters } from "../state/parameters";
-import { usePreviewBuild } from "./usePreviewBuild";
+import { usePreviewBuildContext } from "./usePreviewBuildContext";
 import { PreviewLetter } from "./PreviewLetter";
 import { layoutWord } from "../geometry/layout";
 
 export function PreviewCanvas() {
   const params = useParameters();
-  const { result, busy, layoutFont } = usePreviewBuild();
+  const { result, busy, layoutFont } = usePreviewBuildContext();
 
   const positions = layoutFont ? layoutWord(layoutFont, params.text, params.letterHeight) : [];
   const lettersByIndex = new Map((result?.letters ?? []).map((l) => [l.index, l]));
