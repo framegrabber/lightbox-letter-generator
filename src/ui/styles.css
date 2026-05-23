@@ -1,0 +1,23 @@
+:root { font-family: system-ui, sans-serif; }
+body { margin: 0; }
+.app {
+  display: grid;
+  grid-template-columns: 320px 1fr;
+  height: 100vh;
+}
+.controls-panel { padding: 1rem; overflow: auto; border-right: 1px solid #ddd; }
+.controls-panel fieldset { border: 1px solid #ddd; padding: 0.5rem 0.75rem; margin-bottom: 0.75rem; }
+.controls-panel legend { padding: 0 0.25rem; font-weight: 600; }
+.number-field { margin-bottom: 0.5rem; }
+.number-field label { display: block; font-size: 0.875rem; margin-bottom: 0.25rem; }
+.number-field-input { display: flex; gap: 0.25rem; align-items: center; }
+.number-field-input input { flex: 1; padding: 0.25rem; }
+.number-field-unit { color: #666; }
+.number-field-error { color: #c00; font-size: 0.75rem; margin-top: 0.25rem; }
+.preview-canvas { width: 100%; height: 100%; }
+.text-input label, .font-picker label { display: block; font-size: 0.875rem; margin-bottom: 0.25rem; }
+.text-input textarea { width: 100%; box-sizing: border-box; padding: 0.25rem; }
+.font-picker { margin-bottom: 0.75rem; }
+.font-picker select, .font-picker button { margin-right: 0.25rem; }
+.export-buttons { display: flex; flex-direction: column; gap: 0.25rem; margin-top: 1rem; }
+.export-buttons button { padding: 0.5rem; }
