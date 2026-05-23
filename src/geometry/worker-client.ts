@@ -39,7 +39,7 @@ function ensureWorker(): Worker {
   return worker;
 }
 
-type WorkerResponseMessage = {
+export type WorkerResponse = {
   requestId: string;
   letters: LetterMesh[];
   layers: LetterLayers[];
@@ -62,13 +62,20 @@ export function build(params: Parameters, fontBuffer: ArrayBuffer): Promise<Buil
     rabbetLipWidth: params.rabbetLipWidth,
     bezierTolerance: params.bezierTolerance,
   };
-  return new Promise((resolve) => {
-    const handler = (ev: MessageEvent<WorkerResponseMessage>) => {
+  return new Promise((resolve, reject) => {
+    const handler = (ev: MessageEvent<WorkerResponse>) => {
       if (ev.data?.requestId !== requestId) return;
       w.removeEventListener("message", handler);
+      w.removeEventListener("error", errorHandler);
       resolve({ letters: ev.data.letters, layers: ev.data.layers, errors: ev.data.errors });
     };
+    const errorHandler = (e: ErrorEvent) => {
+      w.removeEventListener("message", handler);
+      w.removeEventListener("error", errorHandler);
+      reject(new Error(e.message || "Worker failed"));
+    };
     w.addEventListener("message", handler);
+    w.addEventListener("error", errorHandler);
     w.postMessage({
       kind: "build",
       requestId,

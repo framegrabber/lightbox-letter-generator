@@ -12,7 +12,7 @@ function fromQueryOrStorage(): Partial<Parameters> | null {
   try {
     const url = new URL(window.location.href);
     const q = url.searchParams.get(URL_KEY);
-    if (q) return JSON.parse(decodeURIComponent(q)) as Partial<Parameters>;
+    if (q) return JSON.parse(q) as Partial<Parameters>;
   } catch {
     // ignore — fall through to localStorage
   }
@@ -51,7 +51,7 @@ export function initPersistence(): void {
     }
 
     const url = new URL(window.location.href);
-    url.searchParams.set(URL_KEY, encodeURIComponent(json));
+    url.searchParams.set(URL_KEY, json);
     window.history.replaceState(null, "", url.toString());
   });
 }

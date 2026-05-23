@@ -44,9 +44,15 @@ export function usePreviewBuild() {
       }
       setLayoutFont(opentype.parse(buf.slice(0)));
       setBusy(true);
-      const r = await build(params, buf);
-      setBusy(false);
-      setResult(r);
+      try {
+        const r = await build(params, buf);
+        setResult(r);
+      } catch (err) {
+        console.error("Build failed:", err);
+        setResult(null);
+      } finally {
+        setBusy(false);
+      }
     }, 150);
 
     return () => {

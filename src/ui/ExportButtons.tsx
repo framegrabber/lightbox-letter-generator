@@ -21,7 +21,7 @@ async function fontShaForSource(source: FontSource): Promise<string> {
 
 export function ExportButtons({ disabled }: Props) {
   const params = useParameters();
-  const { result } = usePreviewBuildContext();
+  const { result, busy: buildBusy } = usePreviewBuildContext();
   const [busy, setBusy] = useState<"stl" | "svg" | null>(null);
 
   async function exportSTL() {
@@ -67,10 +67,10 @@ export function ExportButtons({ disabled }: Props) {
 
   return (
     <div className="export-buttons">
-      <button disabled={disabled || empty || busy !== null} onClick={exportSTL}>
+      <button disabled={disabled || empty || busy !== null || buildBusy} onClick={exportSTL}>
         {busy === "stl" ? "Bundling…" : "Download STL (.zip)"}
       </button>
-      <button disabled={disabled || empty || busy !== null} onClick={exportSVG}>
+      <button disabled={disabled || empty || busy !== null || buildBusy} onClick={exportSVG}>
         {busy === "svg" ? "Bundling…" : "Download SVG (.zip)"}
       </button>
     </div>

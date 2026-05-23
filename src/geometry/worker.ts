@@ -5,42 +5,18 @@ import { capHeightScale } from "./scale";
 import { buildLetterShell, centerMeshXY } from "./shell";
 import { buildLetterLayers } from "../exporters/svg";
 import type { Parameters } from "../state/parameters";
+import type {
+  LetterMesh,
+  LetterLayers,
+  LetterError,
+  WorkerResponse,
+} from "./worker-client";
 
 type WorkerRequest = {
   kind: "build";
   requestId: string;
   params: Parameters;
   fontBuffer: ArrayBuffer;
-};
-
-type LetterMesh = {
-  char: string;
-  index: number;
-  vertProperties: Float32Array;
-  triVerts: Uint32Array;
-  bbox: { minX: number; minY: number; maxX: number; maxY: number };
-};
-
-type LetterLayersMsg = {
-  char: string;
-  index: number;
-  back: [number, number][][];
-  wall: [number, number][][];
-  rabbet: [number, number][][];
-  plexi: [number, number][][];
-};
-
-type LetterError = {
-  char: string;
-  index: number;
-  reason: "offset_collapsed" | "no_contours";
-};
-
-type WorkerResponse = {
-  requestId: string;
-  letters: LetterMesh[];
-  layers: LetterLayersMsg[];
-  errors: LetterError[];
 };
 
 const ctx = self as unknown as DedicatedWorkerGlobalScope;
@@ -54,7 +30,7 @@ ctx.onmessage = async (ev: MessageEvent<WorkerRequest>) => {
   const chars = Array.from(req.params.text).filter((c) => !/\s/.test(c));
 
   const letters: LetterMesh[] = [];
-  const layers: LetterLayersMsg[] = [];
+  const layers: LetterLayers[] = [];
   const errors: LetterError[] = [];
 
   for (let i = 0; i < chars.length; i++) {

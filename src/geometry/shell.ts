@@ -37,30 +37,37 @@ export async function buildLetterShell(input: ShellInputs): Promise<ShellMeshRes
   }
 
   const outerPrism = outer.extrude(input.totalDepth);
-  const cavityPrism = cavity
-    .extrude(input.totalDepth - input.backThickness)
-    .translate([0, 0, input.backThickness]);
-  const rabbetPrism = rabbetCut
-    .extrude(input.rabbetDepth)
-    .translate([0, 0, input.totalDepth - input.rabbetDepth]);
 
-  const shell = outerPrism.subtract(cavityPrism).subtract(rabbetPrism);
+  const cavityExtruded = cavity.extrude(input.totalDepth - input.backThickness);
+  const cavityPrism = cavityExtruded.translate([0, 0, input.backThickness]);
+
+  const rabbetExtruded = rabbetCut.extrude(input.rabbetDepth);
+  const rabbetPrism = rabbetExtruded.translate([0, 0, input.totalDepth - input.rabbetDepth]);
+
+  const shellMinusCavity = outerPrism.subtract(cavityPrism);
+  const shell = shellMinusCavity.subtract(rabbetPrism);
+
   const mesh = shell.getMesh();
+  // Copy typed array views into owned arrays before any .delete() calls;
+  // the views returned by getMesh() are windows into the WASM heap and
+  // become unsafe to read once the manifold object is destroyed.
+  const vertProperties = mesh.vertProperties.slice();
+  const triVerts = mesh.triVerts.slice();
 
   outer.delete();
   cavity.delete();
   rabbetCut.delete();
   outerPrism.delete();
+  cavityExtruded.delete();
   cavityPrism.delete();
+  rabbetExtruded.delete();
   rabbetPrism.delete();
+  shellMinusCavity.delete();
   shell.delete();
 
   return {
     ok: true,
-    mesh: {
-      vertProperties: mesh.vertProperties,
-      triVerts: mesh.triVerts,
-    },
+    mesh: { vertProperties, triVerts },
   };
 }
 
