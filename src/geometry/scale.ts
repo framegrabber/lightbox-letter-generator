@@ -6,7 +6,7 @@ import type opentype from "opentype.js";
  * bounding box when OS/2 sCapHeight is unavailable or zero.
  */
 export function capHeightScale(font: opentype.Font, letterHeight: number): number {
-  const os2 = (font.tables as any).os2;
+  const os2 = (font.tables as { os2?: { sCapHeight?: number } }).os2;
   let capHeightFu: number = os2?.sCapHeight ?? 0;
 
   if (!capHeightFu || capHeightFu <= 0) {
