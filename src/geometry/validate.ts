@@ -32,10 +32,10 @@ export function validate(p: Parameters): ValidationResult {
   }
 
   if (Number.isFinite(p.rabbetLipWidth) && Number.isFinite(p.wallThickness)) {
-    if (p.rabbetLipWidth <= p.wallThickness) {
+    if (p.rabbetLipWidth >= p.wallThickness) {
       errors.push({
         field: "rabbetLipWidth",
-        message: "Rabbet lip width must be greater than wall thickness",
+        message: "Rabbet lip width must be less than wall thickness (the lip carves into the wall material)",
       });
     }
   }

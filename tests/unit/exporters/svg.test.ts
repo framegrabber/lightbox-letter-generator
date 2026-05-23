@@ -47,8 +47,8 @@ describe("buildLetterLayers", () => {
   it("produces all four layers for 'O'", async () => {
     const layers = await buildLetterLayers({
       contours: contoursFor("O"),
-      wallThickness: 3,
-      rabbetLipWidth: 5,
+      wallThickness: 5,
+      rabbetLipWidth: 2,
     });
     expect(layers).not.toBeNull();
     if (!layers) return;

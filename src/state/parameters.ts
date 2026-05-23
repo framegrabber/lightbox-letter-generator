@@ -24,7 +24,7 @@ export const DEFAULT_PARAMETERS: Parameters = {
   totalDepth: 25,
   backThickness: 2,
   rabbetDepth: 3,
-  rabbetLipWidth: 4,
+  rabbetLipWidth: 1.5,
   bezierTolerance: 0.1,
 };
 

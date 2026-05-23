@@ -17,9 +17,9 @@ describe("buildLetterShell", () => {
   const baseInputs: Omit<ShellInputs, "contours"> = {
     totalDepth: 25,
     backThickness: 2,
-    wallThickness: 3,
+    wallThickness: 5,
     rabbetDepth: 3,
-    rabbetLipWidth: 4,
+    rabbetLipWidth: 2,
   };
 
   function contoursFor(ch: string) {
@@ -46,10 +46,23 @@ describe("buildLetterShell", () => {
     const result = await buildLetterShell({
       ...baseInputs,
       wallThickness: 50,
-      rabbetLipWidth: 60,
+      rabbetLipWidth: 40,
       contours: contoursFor("i"),
     });
     expect(result.ok).toBe(false);
     if (!result.ok) expect(result.reason).toBe("offset_collapsed");
+  }, 30_000);
+
+  it("produces a rabbet step (vertices at totalDepth - rabbetDepth) for 'M'", async () => {
+    const result = await buildLetterShell({ ...baseInputs, contours: contoursFor("M") });
+    expect(result.ok).toBe(true);
+    if (!result.ok) return;
+    const expectedShelfZ = baseInputs.totalDepth - baseInputs.rabbetDepth; // 25 - 3 = 22
+    let found = false;
+    const v = result.mesh.vertProperties;
+    for (let i = 2; i < v.length; i += 3) {
+      if (Math.abs(v[i] - expectedShelfZ) < 0.01) { found = true; break; }
+    }
+    expect(found).toBe(true);
   }, 30_000);
 });
