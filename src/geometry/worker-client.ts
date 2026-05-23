@@ -49,6 +49,19 @@ type WorkerResponseMessage = {
 export function build(params: Parameters, fontBuffer: ArrayBuffer): Promise<BuildResult> {
   const w = ensureWorker();
   const requestId = String(++counter);
+  // Extract only the plain data fields. The zustand store passes its full state
+  // (including the `set` function) which is not structured-cloneable.
+  const plainParams: Parameters = {
+    text: params.text,
+    fontSource: params.fontSource,
+    letterHeight: params.letterHeight,
+    wallThickness: params.wallThickness,
+    totalDepth: params.totalDepth,
+    backThickness: params.backThickness,
+    rabbetDepth: params.rabbetDepth,
+    rabbetLipWidth: params.rabbetLipWidth,
+    bezierTolerance: params.bezierTolerance,
+  };
   return new Promise((resolve) => {
     const handler = (ev: MessageEvent<WorkerResponseMessage>) => {
       if (ev.data?.requestId !== requestId) return;
@@ -56,6 +69,11 @@ export function build(params: Parameters, fontBuffer: ArrayBuffer): Promise<Buil
       resolve({ letters: ev.data.letters, layers: ev.data.layers, errors: ev.data.errors });
     };
     w.addEventListener("message", handler);
-    w.postMessage({ kind: "build", requestId, params, fontBuffer: fontBuffer.slice(0) });
+    w.postMessage({
+      kind: "build",
+      requestId,
+      params: plainParams,
+      fontBuffer: fontBuffer.slice(0),
+    });
   });
 }
