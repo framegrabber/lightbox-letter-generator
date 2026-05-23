@@ -14,10 +14,10 @@ export function flattenGlyph(
   unitsPerEm: number,
   toleranceMm: number,
 ): GlyphContours {
-  // Convert mm tolerance to font-unit tolerance. We assume the glyph will be
-  // scaled to roughly 100mm cap height downstream; unitsPerEm/100 is the
-  // font-units-per-mm factor used for chord-deviation tolerance.
-  const toleranceFu = (toleranceMm / 1) * (unitsPerEm / 100);
+  // Approximate fu/mm assuming caller scales the glyph so cap-height ≈ 100mm.
+  // This is a conservative approximation; for fonts with very different cap-height
+  // to em-square ratios, actual tolerance may differ from `toleranceMm` by ~30-50%.
+  const toleranceFu = toleranceMm * (unitsPerEm / 100);
 
   const path = glyph.getPath(0, 0, unitsPerEm);
   const contours: Polygon[] = [];
@@ -120,7 +120,7 @@ function flattenQuadratic(
   while (stack.length) {
     const [ax, ay, bx, by, cx, cy, depth] = stack.pop()!;
     const dev = pointLineDistance(bx, by, ax, ay, cx, cy);
-    if (dev <= tol || depth > 16) {
+    if (dev <= tol || depth >= 16) {
       out.push([cx, flipY(cy)]);
     } else {
       const mAx = (ax + bx) / 2,
@@ -163,7 +163,7 @@ function flattenCubic(
     const [ax, ay, bx, by, cx, cy, dx, dy, depth] = stack.pop()!;
     const d1 = pointLineDistance(bx, by, ax, ay, dx, dy);
     const d2 = pointLineDistance(cx, cy, ax, ay, dx, dy);
-    if (Math.max(d1, d2) <= tol || depth > 16) {
+    if (Math.max(d1, d2) <= tol || depth >= 16) {
       out.push([dx, flipY(dy)]);
     } else {
       const m1x = (ax + bx) / 2,
@@ -211,6 +211,7 @@ function pointLineDistance(
  */
 function correctWinding(contours: Polygon[]): Polygon[] {
   return contours.map((poly, i) => {
+    if (poly.length === 0) return poly;
     let inside = 0;
     const [px, py] = poly[0];
     for (let j = 0; j < contours.length; j++) {
