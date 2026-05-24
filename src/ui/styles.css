@@ -25,12 +25,16 @@ body { margin: 0; }
   background: #fee; color: #900; padding: 0.5rem; border-radius: 4px; font-size: 0.875rem;
 }
 .preview-fit {
-  position: absolute; top: 0.5rem; right: 0.5rem;
-  background: #ffffff14; color: #ddd; border: 1px solid #ffffff24;
-  padding: 0.25rem 0.6rem; border-radius: 4px; font-size: 0.75rem;
-  cursor: pointer;
+  position: absolute; bottom: 12px; left: 12px;
+  display: flex; align-items: center; justify-content: center;
+  background: #1c1c22; color: #999;
+  border: 1px solid #2a2a32; border-radius: 4px;
+  padding: 6px; cursor: pointer;
+  transition: all 0.15s ease;
 }
-.preview-fit:hover { background: #ffffff28; }
+.preview-fit:hover {
+  color: #eee; background: #24242c; border-color: #3a3a44;
+}
 .text-input label, .font-picker label { display: block; font-size: 0.875rem; margin-bottom: 0.25rem; }
 .text-input textarea { width: 100%; box-sizing: border-box; padding: 0.25rem; }
 .font-picker { margin-bottom: 0.75rem; }
