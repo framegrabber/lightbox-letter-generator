@@ -21,13 +21,11 @@ function SceneSetup({ fitToken }: { fitToken: number }) {
     camera.up.set(0, 0, 1);
   }, [camera]);
 
-  // Auto-fit on first geometry load. Reset when geometry clears so the next
-  // load re-fits (e.g. user clears text, types something different).
+  // Auto-fit only on the very first geometry load. Param changes (including
+  // clearing text and retyping) do not move the camera. The Fit button is the
+  // explicit way to recenter.
   useEffect(() => {
-    if (!result || result.letters.length === 0) {
-      hasFitOnce.current = false;
-      return;
-    }
+    if (!result || result.letters.length === 0) return;
     if (hasFitOnce.current && fitToken === 0) return;
 
     const id = requestAnimationFrame(() => {
