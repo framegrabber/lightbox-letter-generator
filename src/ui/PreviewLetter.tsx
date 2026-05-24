@@ -6,9 +6,13 @@ type Props = { letter: LetterMesh; xOffset: number };
 
 export function PreviewLetter({ letter, xOffset }: Props) {
   const geometry = useMemo(() => {
-    const g = new THREE.BufferGeometry();
-    g.setAttribute("position", new THREE.BufferAttribute(letter.vertProperties, 3));
-    g.setIndex(new THREE.BufferAttribute(letter.triVerts, 1));
+    const indexed = new THREE.BufferGeometry();
+    indexed.setAttribute("position", new THREE.BufferAttribute(letter.vertProperties, 3));
+    indexed.setIndex(new THREE.BufferAttribute(letter.triVerts, 1));
+    // toNonIndexed() before computeVertexNormals() gives every triangle its own
+    // vertices, so the normals match the face — sharp creases at every edge.
+    // (Smooth shading from welded vertices was averaging across 90° corners.)
+    const g = indexed.toNonIndexed();
     g.computeVertexNormals();
     return g;
   }, [letter]);
