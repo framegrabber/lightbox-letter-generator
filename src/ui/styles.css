@@ -14,16 +14,23 @@ body { margin: 0; }
 .number-field-input input { flex: 1; padding: 0.25rem; }
 .number-field-unit { color: #666; }
 .number-field-error { color: #c00; font-size: 0.75rem; margin-top: 0.25rem; }
-.preview-canvas { width: 100%; height: 100%; position: relative; }
+.preview-canvas { width: 100%; height: 100%; position: relative; background: #111114; }
 .preview-busy, .preview-empty {
   position: absolute; top: 0.5rem; left: 50%; transform: translateX(-50%);
-  background: #fff8; padding: 0.25rem 0.75rem; border-radius: 4px;
+  background: #ffffff14; color: #ddd; padding: 0.25rem 0.75rem; border-radius: 4px; font-size: 0.875rem;
 }
 .preview-empty { color: #888; }
 .preview-errors {
   position: absolute; bottom: 0.5rem; left: 0.5rem;
   background: #fee; color: #900; padding: 0.5rem; border-radius: 4px; font-size: 0.875rem;
 }
+.preview-fit {
+  position: absolute; top: 0.5rem; right: 0.5rem;
+  background: #ffffff14; color: #ddd; border: 1px solid #ffffff24;
+  padding: 0.25rem 0.6rem; border-radius: 4px; font-size: 0.75rem;
+  cursor: pointer;
+}
+.preview-fit:hover { background: #ffffff28; }
 .text-input label, .font-picker label { display: block; font-size: 0.875rem; margin-bottom: 0.25rem; }
 .text-input textarea { width: 100%; box-sizing: border-box; padding: 0.25rem; }
 .font-picker { margin-bottom: 0.75rem; }

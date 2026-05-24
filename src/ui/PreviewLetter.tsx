@@ -14,8 +14,8 @@ export function PreviewLetter({ letter, xOffset }: Props) {
   }, [letter]);
 
   return (
-    <mesh geometry={geometry} position={[xOffset, 0, 0]} castShadow receiveShadow>
-      <meshStandardMaterial color="#cccccc" metalness={0.1} roughness={0.6} />
+    <mesh geometry={geometry} position={[xOffset, 0, 0]}>
+      <meshStandardMaterial color="#e5e1d8" metalness={0} roughness={0.65} />
     </mesh>
   );
 }
