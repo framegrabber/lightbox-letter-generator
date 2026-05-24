@@ -1,0 +1,62 @@
+- generic [ref=e3]:
+  - complementary [ref=e4]:
+    - generic [ref=e5]:
+      - generic [ref=e6]: Text
+      - textbox "Text" [ref=e7]:
+        - /placeholder: Type a word…
+        - text: BURGEr
+    - generic [ref=e8]:
+      - generic [ref=e9]: Font
+      - combobox "Font" [ref=e10]:
+        - option "Inter — Sans"
+        - option "Montserrat — Geometric sans" [selected]
+        - option "Anton — Bold condensed"
+        - option "Bebas Neue — Condensed display"
+        - option "Bungee — Signage display"
+        - option "Roboto Slab — Slab serif"
+        - option "Playfair Display — Serif"
+        - option "Pacifico — Script"
+      - button "Upload TTF/OTF…" [ref=e11]
+    - group "Size" [ref=e12]:
+      - generic [ref=e13]: Size
+      - generic [ref=e14]:
+        - generic [ref=e15]: Letter height
+        - generic [ref=e16]:
+          - spinbutton "Letter height" [ref=e17]: "250"
+          - generic [ref=e18]: mm
+    - group "Walls" [ref=e19]:
+      - generic [ref=e20]: Walls
+      - generic [ref=e21]:
+        - generic [ref=e22]: Wall thickness
+        - generic [ref=e23]:
+          - spinbutton "Wall thickness" [ref=e24]: "5"
+          - generic [ref=e25]: mm
+      - generic [ref=e26]:
+        - generic [ref=e27]: Total depth
+        - generic [ref=e28]:
+          - spinbutton "Total depth" [ref=e29]: "30"
+          - generic [ref=e30]: mm
+      - generic [ref=e31]:
+        - generic [ref=e32]: Back thickness
+        - generic [ref=e33]:
+          - spinbutton "Back thickness" [ref=e34]: "5"
+          - generic [ref=e35]: mm
+    - group "Plexi inset" [ref=e36]:
+      - generic [ref=e37]: Plexi inset
+      - generic [ref=e38]:
+        - generic [ref=e39]: Rabbet depth
+        - generic [ref=e40]:
+          - spinbutton "Rabbet depth" [ref=e41]: "3"
+          - generic [ref=e42]: mm
+      - generic [ref=e43]:
+        - generic [ref=e44]: Rabbet lip width
+        - generic [ref=e45]:
+          - spinbutton "Rabbet lip width" [ref=e46]: "3"
+          - generic [ref=e47]: mm
+    - group [ref=e48]:
+      - generic "Advanced" [ref=e49]
+    - generic [ref=e50]:
+      - button "Download STL (.zip)" [disabled] [ref=e51]
+      - button "Download SVG (.zip)" [disabled] [ref=e52]
+  - button "Fit camera" [ref=e57] [cursor=pointer]:
+    - img [ref=e58]
