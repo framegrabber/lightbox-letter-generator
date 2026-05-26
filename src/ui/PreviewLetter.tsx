@@ -21,6 +21,7 @@ function makeFlatGeometry(
 
 export function PreviewLetter({ letter, xOffset }: Props) {
   const showPlexi = useUI((s) => s.showPlexi);
+  const showShadow = useUI((s) => s.showShadow);
 
   const shellGeometry = useMemo(
     () => makeFlatGeometry(letter.vertProperties, letter.triVerts),
@@ -41,8 +42,8 @@ export function PreviewLetter({ letter, xOffset }: Props) {
 
   return (
     <group position={[xOffset + cx, cy, 0]}>
-      <mesh geometry={shellGeometry}>
-        <meshStandardMaterial color="#3a3a3a" metalness={0} roughness={0.65} />
+      <mesh geometry={shellGeometry} castShadow={showShadow} receiveShadow={showShadow}>
+        <meshStandardMaterial color="#5a5a5a" metalness={0} roughness={0.65} />
       </mesh>
       {showPlexi && plexiGeometry && (
         <mesh geometry={plexiGeometry}>

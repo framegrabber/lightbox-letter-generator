@@ -111,6 +111,7 @@ function CameraHUD({ hudRef }: { hudRef: React.RefObject<HTMLDivElement | null> 
 export function PreviewCanvas() {
   const params = useParameters();
   const showCameraHUD = useUI((s) => s.showCameraHUD);
+  const showShadow = useUI((s) => s.showShadow);
   const { result, busy, layoutFont } = usePreviewBuildContext();
   const [fitToken, setFitToken] = useState(0);
   const hudRef = useRef<HTMLDivElement | null>(null);
@@ -127,11 +128,30 @@ export function PreviewCanvas() {
   return (
     <div className="preview-canvas">
       {busy && <div className="preview-busy">Generating…</div>}
-      <Canvas camera={{ fov: 45, position: [40, -30, 50], near: 0.1, far: 5000 }}>
+      <Canvas shadows camera={{ fov: 45, position: [40, -30, 50], near: 0.1, far: 5000 }}>
         <color attach="background" args={["#ffffff"]} />
         <ambientLight intensity={0.55} />
-        <directionalLight intensity={1.4} position={[60, -40, 80]} />
+        <directionalLight
+          intensity={1.4}
+          position={[60, -40, 80]}
+          castShadow={showShadow}
+          shadow-mapSize-width={2048}
+          shadow-mapSize-height={2048}
+          shadow-camera-left={-1500}
+          shadow-camera-right={1500}
+          shadow-camera-top={1500}
+          shadow-camera-bottom={-1500}
+          shadow-camera-near={0.1}
+          shadow-camera-far={3000}
+          shadow-bias={-0.0005}
+        />
         <directionalLight color="#c8d8ee" intensity={0.4} position={[-50, 20, 30]} />
+        {showShadow && (
+          <mesh receiveShadow position={[0, 0, -0.05]}>
+            <planeGeometry args={[5000, 5000]} />
+            <shadowMaterial opacity={0.22} />
+          </mesh>
+        )}
         <gridHelper
           args={[1000, 20, "#cfcfcf", "#e5e5e5"]}
           rotation={[Math.PI / 2, 0, 0]}

@@ -21,6 +21,17 @@ function CameraHUDToggle() {
   );
 }
 
+function ShadowToggle() {
+  const show = useUI((s) => s.showShadow);
+  const setShow = useUI((s) => s.setShowShadow);
+  return (
+    <label className="checkbox-field">
+      <input type="checkbox" checked={show} onChange={(e) => setShow(e.target.checked)} />
+      Show shadow
+    </label>
+  );
+}
+
 function PlexiToggle() {
   const show = useUI((s) => s.showPlexi);
   const setShow = useUI((s) => s.setShowPlexi);
@@ -109,6 +120,7 @@ export function ControlsPanel() {
           error={errorFor(errs, "bezierTolerance")}
         />
         <CameraHUDToggle />
+        <ShadowToggle />
       </details>
 
       <ExportButtons disabled={!result.ok} />
