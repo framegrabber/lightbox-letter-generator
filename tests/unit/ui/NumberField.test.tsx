@@ -28,4 +28,32 @@ describe("NumberField", () => {
     );
     expect(screen.getByText("Must be less than total depth")).toBeInTheDocument();
   });
+
+  it("allows clearing the input without snapping back to the value", () => {
+    const onChange = vi.fn();
+    render(<NumberField label="Wall thickness" unit="mm" value={3} onChange={onChange} />);
+    const input = screen.getByLabelText("Wall thickness") as HTMLInputElement;
+    fireEvent.change(input, { target: { value: "" } });
+    expect(input.value).toBe("");
+    expect(onChange).not.toHaveBeenCalled();
+  });
+
+  it("commits new value once the cleared input is replaced with a number", () => {
+    const onChange = vi.fn();
+    render(<NumberField label="Wall thickness" unit="mm" value={3} onChange={onChange} />);
+    const input = screen.getByLabelText("Wall thickness") as HTMLInputElement;
+    fireEvent.change(input, { target: { value: "" } });
+    fireEvent.change(input, { target: { value: "7" } });
+    expect(onChange).toHaveBeenCalledWith(7);
+    expect(input.value).toBe("7");
+  });
+
+  it("snaps the input text back to the prop value on blur if cleared", () => {
+    render(<NumberField label="Wall thickness" unit="mm" value={3} onChange={() => {}} />);
+    const input = screen.getByLabelText("Wall thickness") as HTMLInputElement;
+    fireEvent.change(input, { target: { value: "" } });
+    expect(input.value).toBe("");
+    fireEvent.blur(input);
+    expect(input.value).toBe("3");
+  });
 });
