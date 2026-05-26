@@ -4,8 +4,12 @@ import JSZip from "jszip";
 test("end-to-end: type word, export STL", async ({ page }) => {
   await page.goto("/");
 
+  // Self-contained settings so the test doesn't depend on default values
+  // that may change. wallThickness=3 is small enough for thin strokes at 80mm.
   await page.getByLabel("Text").fill("Hi");
   await page.getByLabel("Letter height").fill("80");
+  await page.getByLabel("Wall thickness").fill("3");
+  await page.getByLabel("Inset width").fill("1.5");
 
   // Wait for preview to settle (heuristic: STL button enables when build completes).
   const stlButton = page.getByRole("button", { name: /Download STL/ });
