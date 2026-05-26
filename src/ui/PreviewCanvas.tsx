@@ -3,9 +3,17 @@ import { OrbitControls } from "@react-three/drei";
 import { useEffect, useRef, useState } from "react";
 import * as THREE from "three";
 import { useParameters } from "../state/parameters";
+import { useUI } from "../state/ui";
 import { usePreviewBuildContext } from "./usePreviewBuildContext";
 import { PreviewLetter } from "./PreviewLetter";
 import { layoutWord } from "../geometry/layout";
+
+// Auto-fit defaults: where the focal point sits inside the bbox, the camera
+// distance multiplier, and the unit-vector direction from target to camera.
+// These were derived from a manually-orbited preferred view of BURGER.
+const AUTOFIT_TARGET_FRACTION = { x: 0.5, y: 0.215, z: 0.61 };
+const AUTOFIT_DIST_MULTIPLIER = 1.2;
+const AUTOFIT_DIRECTION = { x: -0.19, y: -0.48, z: 0.86 };
 
 type Controls = { target: THREE.Vector3; update: () => void } | null;
 
@@ -50,17 +58,20 @@ function SceneSetup({ fitToken }: { fitToken: number }) {
       box.getSize(size);
       const maxDim = Math.max(size.x, size.y, size.z);
       if (maxDim === 0) return;
-      const dist = maxDim * 2.2;
+      const dist = maxDim * AUTOFIT_DIST_MULTIPLIER;
 
-      // Bias the focal point toward the start of the word (LTR-natural):
-      // letters extend along +X, so target the first ~25% of the bbox so
-      // the leftmost letter dominates the view and the rest reads into it.
-      const target = new THREE.Vector3(box.min.x + size.x * 0.25, center.y, center.z);
+      const target = new THREE.Vector3(
+        box.min.x + size.x * AUTOFIT_TARGET_FRACTION.x,
+        box.min.y + size.y * AUTOFIT_TARGET_FRACTION.y,
+        box.min.z + size.z * AUTOFIT_TARGET_FRACTION.z,
+      );
+      // 'center' is unused here now; named parameters above describe the placement.
+      void center;
 
       camera.position.set(
-        target.x + dist * 0.6,
-        target.y - dist * 0.5,
-        target.z + dist * 0.7,
+        target.x + dist * AUTOFIT_DIRECTION.x,
+        target.y + dist * AUTOFIT_DIRECTION.y,
+        target.z + dist * AUTOFIT_DIRECTION.z,
       );
       camera.lookAt(target);
       if (controls) {
@@ -99,9 +110,11 @@ function CameraHUD({ hudRef }: { hudRef: React.RefObject<HTMLDivElement | null> 
 
 export function PreviewCanvas() {
   const params = useParameters();
+  const showCameraHUD = useUI((s) => s.showCameraHUD);
   const { result, busy, layoutFont } = usePreviewBuildContext();
   const [fitToken, setFitToken] = useState(0);
   const hudRef = useRef<HTMLDivElement | null>(null);
+  const [copied, setCopied] = useState(false);
 
   const positions = layoutFont ? layoutWord(layoutFont, params.text, params.letterHeight) : [];
   const lettersByIndex = new Map((result?.letters ?? []).map((l) => [l.index, l]));
@@ -124,7 +137,7 @@ export function PreviewCanvas() {
           rotation={[Math.PI / 2, 0, 0]}
         />
         <SceneSetup fitToken={fitToken} />
-        <CameraHUD hudRef={hudRef} />
+        {showCameraHUD && <CameraHUD hudRef={hudRef} />}
         {positions.map((p, i) => {
           const originalIndex = visibleCharIndices[i];
           const letter = lettersByIndex.get(originalIndex);
@@ -143,7 +156,27 @@ export function PreviewCanvas() {
           <path d="M15 3h6v6M9 21H3v-6M21 3l-7 7M3 21l7-7" />
         </svg>
       </button>
-      <div ref={hudRef} className="preview-hud" aria-hidden="true" />
+      {showCameraHUD && (
+        <div className="preview-hud-wrap">
+          <div ref={hudRef} className="preview-hud" />
+          <button
+            type="button"
+            className="preview-hud-copy"
+            onClick={async () => {
+              const text = hudRef.current?.textContent ?? "";
+              try {
+                await navigator.clipboard.writeText(text);
+                setCopied(true);
+                setTimeout(() => setCopied(false), 1200);
+              } catch {
+                // ignore — clipboard may be denied
+              }
+            }}
+          >
+            {copied ? "Copied" : "Copy"}
+          </button>
+        </div>
+      )}
       {result && result.errors.length > 0 && (
         <div className="preview-errors">
           {result.errors.map((e, i) => (

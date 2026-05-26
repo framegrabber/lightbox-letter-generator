@@ -35,13 +35,26 @@ body { margin: 0; }
 .preview-fit:hover {
   color: #eee; background: #24242c; border-color: #3a3a44;
 }
-.preview-hud {
+.preview-hud-wrap {
   position: absolute; top: 8px; right: 8px;
+  display: flex; align-items: flex-start; gap: 6px;
+}
+.preview-hud {
   font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
   font-size: 11px; line-height: 1.35; white-space: pre;
   color: #aaa; background: #0008;
   padding: 6px 8px; border-radius: 4px;
-  pointer-events: none; user-select: text;
+  user-select: text; cursor: text;
+}
+.preview-hud-copy {
+  font-size: 11px; color: #aaa;
+  background: #1c1c22; border: 1px solid #2a2a32; border-radius: 4px;
+  padding: 4px 8px; cursor: pointer;
+}
+.preview-hud-copy:hover { color: #eee; background: #24242c; border-color: #3a3a44; }
+.checkbox-field {
+  display: flex; align-items: center; gap: 0.4rem;
+  font-size: 0.875rem; margin-top: 0.5rem;
 }
 .text-input label, .font-picker label { display: block; font-size: 0.875rem; margin-bottom: 0.25rem; }
 .text-input textarea { width: 100%; box-sizing: border-box; padding: 0.25rem; resize: vertical; }

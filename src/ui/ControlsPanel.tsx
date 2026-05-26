@@ -1,4 +1,5 @@
 import { useParameters } from "../state/parameters";
+import { useUI } from "../state/ui";
 import { validate, type ValidationError } from "../geometry/validate";
 import { TextInput } from "./TextInput";
 import { FontPicker } from "./FontPicker";
@@ -7,6 +8,17 @@ import { ExportButtons } from "./ExportButtons";
 
 function errorFor(errors: ValidationError[], field: string): string | undefined {
   return errors.find((e) => e.field === field)?.message;
+}
+
+function CameraHUDToggle() {
+  const show = useUI((s) => s.showCameraHUD);
+  const setShow = useUI((s) => s.setShowCameraHUD);
+  return (
+    <label className="checkbox-field">
+      <input type="checkbox" checked={show} onChange={(e) => setShow(e.target.checked)} />
+      Show camera HUD
+    </label>
+  );
 }
 
 export function ControlsPanel() {
@@ -84,6 +96,7 @@ export function ControlsPanel() {
           step={0.01}
           error={errorFor(errs, "bezierTolerance")}
         />
+        <CameraHUDToggle />
       </details>
 
       <ExportButtons disabled={!result.ok} />
