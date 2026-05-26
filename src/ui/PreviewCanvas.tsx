@@ -1,4 +1,4 @@
-import { Canvas, useThree } from "@react-three/fiber";
+import { Canvas, useFrame, useThree } from "@react-three/fiber";
 import { OrbitControls } from "@react-three/drei";
 import { useEffect, useRef, useState } from "react";
 import * as THREE from "three";
@@ -75,10 +75,33 @@ function SceneSetup({ fitToken }: { fitToken: number }) {
   return <OrbitControls makeDefault enableDamping dampingFactor={0.08} />;
 }
 
+// Live HUD that writes camera position + target into a DOM node every frame.
+// Bypasses React re-renders; cheap.
+function CameraHUD({ hudRef }: { hudRef: React.RefObject<HTMLDivElement | null> }) {
+  const camera = useThree((s) => s.camera);
+  const controls = useThree((s) => s.controls) as Controls;
+  useFrame(() => {
+    if (!hudRef.current) return;
+    const c = camera.position;
+    const t = controls?.target ?? new THREE.Vector3();
+    const ox = c.x - t.x;
+    const oy = c.y - t.y;
+    const oz = c.z - t.z;
+    const dist = Math.hypot(ox, oy, oz) || 1;
+    hudRef.current.textContent =
+      `cam   (${c.x.toFixed(0)}, ${c.y.toFixed(0)}, ${c.z.toFixed(0)})\n` +
+      `target(${t.x.toFixed(0)}, ${t.y.toFixed(0)}, ${t.z.toFixed(0)})\n` +
+      `offset(${ox.toFixed(0)}, ${oy.toFixed(0)}, ${oz.toFixed(0)})  d=${dist.toFixed(0)}\n` +
+      `dir   (${(ox / dist).toFixed(2)}, ${(oy / dist).toFixed(2)}, ${(oz / dist).toFixed(2)})`;
+  });
+  return null;
+}
+
 export function PreviewCanvas() {
   const params = useParameters();
   const { result, busy, layoutFont } = usePreviewBuildContext();
   const [fitToken, setFitToken] = useState(0);
+  const hudRef = useRef<HTMLDivElement | null>(null);
 
   const positions = layoutFont ? layoutWord(layoutFont, params.text, params.letterHeight) : [];
   const lettersByIndex = new Map((result?.letters ?? []).map((l) => [l.index, l]));
@@ -101,6 +124,7 @@ export function PreviewCanvas() {
           rotation={[Math.PI / 2, 0, 0]}
         />
         <SceneSetup fitToken={fitToken} />
+        <CameraHUD hudRef={hudRef} />
         {positions.map((p, i) => {
           const originalIndex = visibleCharIndices[i];
           const letter = lettersByIndex.get(originalIndex);
@@ -119,6 +143,7 @@ export function PreviewCanvas() {
           <path d="M15 3h6v6M9 21H3v-6M21 3l-7 7M3 21l7-7" />
         </svg>
       </button>
+      <div ref={hudRef} className="preview-hud" aria-hidden="true" />
       {result && result.errors.length > 0 && (
         <div className="preview-errors">
           {result.errors.map((e, i) => (

@@ -35,6 +35,14 @@ body { margin: 0; }
 .preview-fit:hover {
   color: #eee; background: #24242c; border-color: #3a3a44;
 }
+.preview-hud {
+  position: absolute; top: 8px; right: 8px;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  font-size: 11px; line-height: 1.35; white-space: pre;
+  color: #aaa; background: #0008;
+  padding: 6px 8px; border-radius: 4px;
+  pointer-events: none; user-select: text;
+}
 .text-input label, .font-picker label { display: block; font-size: 0.875rem; margin-bottom: 0.25rem; }
 .text-input textarea { width: 100%; box-sizing: border-box; padding: 0.25rem; resize: vertical; }
 .font-picker { margin-bottom: 0.75rem; }
