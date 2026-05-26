@@ -27,14 +27,18 @@ ctx.onmessage = async (ev: MessageEvent<WorkerRequest>) => {
 
   const font = opentype.parse(req.fontBuffer);
   const scale = capHeightScale(font, req.params.letterHeight);
-  const chars = Array.from(req.params.text).filter((c) => !/\s/.test(c));
+  // Keep the original text index (including spaces) so the preview can
+  // match letters to their layout slots even when the text contains spaces.
+  const visibleChars: { ch: string; origIndex: number }[] = [];
+  Array.from(req.params.text).forEach((c, i) => {
+    if (!/\s/.test(c)) visibleChars.push({ ch: c, origIndex: i });
+  });
 
   const letters: LetterMesh[] = [];
   const layers: LetterLayers[] = [];
   const errors: LetterError[] = [];
 
-  for (let i = 0; i < chars.length; i++) {
-    const char = chars[i];
+  for (const { ch: char, origIndex } of visibleChars) {
     const glyph = font.charToGlyph(char);
     const rawContours = flattenGlyph(glyph, font.unitsPerEm, req.params.bezierTolerance);
     const contours = rawContours.map(
@@ -51,14 +55,14 @@ ctx.onmessage = async (ev: MessageEvent<WorkerRequest>) => {
     });
 
     if (!meshResult.ok) {
-      errors.push({ char, index: i, reason: meshResult.reason });
+      errors.push({ char, index: origIndex, reason: meshResult.reason });
       continue;
     }
 
     const centered = centerMeshXY(meshResult.mesh);
     letters.push({
       char,
-      index: i,
+      index: origIndex,
       vertProperties: centered.vertProperties,
       triVerts: centered.triVerts,
       bbox: centered.bbox,
@@ -70,7 +74,7 @@ ctx.onmessage = async (ev: MessageEvent<WorkerRequest>) => {
       insetWidth: req.params.insetWidth,
     });
     if (layerResult) {
-      layers.push({ char, index: i, ...layerResult });
+      layers.push({ char, index: origIndex, ...layerResult });
     }
   }
 
