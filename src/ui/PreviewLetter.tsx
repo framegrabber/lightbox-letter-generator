@@ -1,20 +1,35 @@
 import { useMemo } from "react";
 import * as THREE from "three";
 import type { LetterMesh } from "../geometry/worker-client";
+import { useUI } from "../state/ui";
 
 type Props = { letter: LetterMesh; xOffset: number };
 
+function makeFlatGeometry(
+  vertProperties: Float32Array,
+  triVerts: Uint32Array,
+): THREE.BufferGeometry {
+  const indexed = new THREE.BufferGeometry();
+  indexed.setAttribute("position", new THREE.BufferAttribute(vertProperties, 3));
+  indexed.setIndex(new THREE.BufferAttribute(triVerts, 1));
+  // toNonIndexed() before computeVertexNormals() gives every triangle its own
+  // vertices, so the normals match the face — sharp creases at every edge.
+  const g = indexed.toNonIndexed();
+  g.computeVertexNormals();
+  return g;
+}
+
 export function PreviewLetter({ letter, xOffset }: Props) {
-  const geometry = useMemo(() => {
-    const indexed = new THREE.BufferGeometry();
-    indexed.setAttribute("position", new THREE.BufferAttribute(letter.vertProperties, 3));
-    indexed.setIndex(new THREE.BufferAttribute(letter.triVerts, 1));
-    // toNonIndexed() before computeVertexNormals() gives every triangle its own
-    // vertices, so the normals match the face — sharp creases at every edge.
-    // (Smooth shading from welded vertices was averaging across 90° corners.)
-    const g = indexed.toNonIndexed();
-    g.computeVertexNormals();
-    return g;
+  const showPlexi = useUI((s) => s.showPlexi);
+
+  const shellGeometry = useMemo(
+    () => makeFlatGeometry(letter.vertProperties, letter.triVerts),
+    [letter],
+  );
+
+  const plexiGeometry = useMemo(() => {
+    if (!letter.plexi) return null;
+    return makeFlatGeometry(letter.plexi.vertProperties, letter.plexi.triVerts);
   }, [letter]);
 
   // The mesh was centered on its own bbox (so each STL exports centered).
@@ -25,8 +40,25 @@ export function PreviewLetter({ letter, xOffset }: Props) {
   const cy = (letter.bbox.minY + letter.bbox.maxY) / 2;
 
   return (
-    <mesh geometry={geometry} position={[xOffset + cx, cy, 0]}>
-      <meshStandardMaterial color="#e5e1d8" metalness={0} roughness={0.65} />
-    </mesh>
+    <group position={[xOffset + cx, cy, 0]}>
+      <mesh geometry={shellGeometry}>
+        <meshStandardMaterial color="#3a3a3a" metalness={0} roughness={0.65} />
+      </mesh>
+      {showPlexi && plexiGeometry && (
+        <mesh geometry={plexiGeometry}>
+          <meshPhysicalMaterial
+            color="#ffffff"
+            roughness={0.85}
+            metalness={0}
+            transmission={0.6}
+            thickness={2}
+            ior={1.49}
+            transparent
+            opacity={0.55}
+            depthWrite={false}
+          />
+        </mesh>
+      )}
+    </group>
   );
 }

@@ -75,6 +75,45 @@ export async function buildLetterShell(input: ShellInputs): Promise<ShellMeshRes
   };
 }
 
+export type PlexiInputs = {
+  contours: GlyphContours;
+  totalDepth: number;
+  rabbetDepth: number;
+  wallThickness: number;
+  insetWidth: number;
+};
+
+// Standalone mesh of just the plexi piece — same XY shape as the rabbet
+// cutout, extruded by rabbetDepth, positioned to sit flush in the recess.
+// Returns null if the rabbet cutout collapses for this glyph.
+export async function buildLetterPlexi(input: PlexiInputs): Promise<{ vertProperties: Float32Array; triVerts: Uint32Array } | null> {
+  if (input.contours.length === 0) return null;
+  const m = await getManifold();
+  const { CrossSection } = m;
+
+  const outer = new CrossSection(input.contours, "NonZero");
+  const lipWidth = input.wallThickness - input.insetWidth;
+  const rabbetCut = outer.offset(-lipWidth, "Round");
+
+  if (rabbetCut.isEmpty()) {
+    outer.delete();
+    rabbetCut.delete();
+    return null;
+  }
+
+  const extruded = rabbetCut.extrude(input.rabbetDepth);
+  const positioned = extruded.translate([0, 0, input.totalDepth - input.rabbetDepth]);
+  const mesh = positioned.getMesh();
+  const vertProperties = mesh.vertProperties.slice();
+  const triVerts = mesh.triVerts.slice();
+
+  outer.delete();
+  rabbetCut.delete();
+  extruded.delete();
+  positioned.delete();
+  return { vertProperties, triVerts };
+}
+
 export function centerMeshXY(mesh: { vertProperties: Float32Array; triVerts: Uint32Array }): {
   vertProperties: Float32Array;
   triVerts: Uint32Array;

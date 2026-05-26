@@ -4,9 +4,13 @@ import { create } from "zustand";
 type UIState = {
   showCameraHUD: boolean;
   setShowCameraHUD: (v: boolean) => void;
+  showPlexi: boolean;
+  setShowPlexi: (v: boolean) => void;
 };
 
 export const useUI = create<UIState>((set) => ({
   showCameraHUD: false,
   setShowCameraHUD: (v) => set({ showCameraHUD: v }),
+  showPlexi: true,
+  setShowPlexi: (v) => set({ showPlexi: v }),
 }));

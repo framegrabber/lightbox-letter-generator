@@ -21,6 +21,17 @@ function CameraHUDToggle() {
   );
 }
 
+function PlexiToggle() {
+  const show = useUI((s) => s.showPlexi);
+  const setShow = useUI((s) => s.setShowPlexi);
+  return (
+    <label className="checkbox-field">
+      <input type="checkbox" checked={show} onChange={(e) => setShow(e.target.checked)} />
+      Show plexi in preview
+    </label>
+  );
+}
+
 export function ControlsPanel() {
   const params = useParameters();
   const result = validate(params);
@@ -84,6 +95,7 @@ export function ControlsPanel() {
           onChange={(v) => params.set({ insetWidth: v })}
           error={errorFor(errs, "insetWidth")}
         />
+        <PlexiToggle />
       </fieldset>
 
       <details>

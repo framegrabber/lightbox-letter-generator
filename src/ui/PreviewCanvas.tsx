@@ -128,12 +128,12 @@ export function PreviewCanvas() {
     <div className="preview-canvas">
       {busy && <div className="preview-busy">Generating…</div>}
       <Canvas camera={{ fov: 45, position: [40, -30, 50], near: 0.1, far: 5000 }}>
-        <color attach="background" args={["#111114"]} />
-        <ambientLight intensity={0.25} />
-        <directionalLight intensity={2.0} position={[60, -40, 80]} />
-        <directionalLight color="#c8d8ee" intensity={0.6} position={[-50, 20, 30]} />
+        <color attach="background" args={["#ffffff"]} />
+        <ambientLight intensity={0.55} />
+        <directionalLight intensity={1.4} position={[60, -40, 80]} />
+        <directionalLight color="#c8d8ee" intensity={0.4} position={[-50, 20, 30]} />
         <gridHelper
-          args={[1000, 20, "#222230", "#1a1a24"]}
+          args={[1000, 20, "#cfcfcf", "#e5e5e5"]}
           rotation={[Math.PI / 2, 0, 0]}
         />
         <SceneSetup fitToken={fitToken} />

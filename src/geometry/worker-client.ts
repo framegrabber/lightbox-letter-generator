@@ -6,6 +6,7 @@ export type LetterMesh = {
   vertProperties: Float32Array;
   triVerts: Uint32Array;
   bbox: { minX: number; minY: number; maxX: number; maxY: number };
+  plexi: { vertProperties: Float32Array; triVerts: Uint32Array } | null;
 };
 
 export type LetterLayers = {
