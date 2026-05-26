@@ -17,8 +17,15 @@ export function PreviewLetter({ letter, xOffset }: Props) {
     return g;
   }, [letter]);
 
+  // The mesh was centered on its own bbox (so each STL exports centered).
+  // To restore opentype's natural positioning here, shift back by the
+  // original bbox center — otherwise narrow letters would creep left and
+  // wide letters would overhang their advance, causing overlap.
+  const cx = (letter.bbox.minX + letter.bbox.maxX) / 2;
+  const cy = (letter.bbox.minY + letter.bbox.maxY) / 2;
+
   return (
-    <mesh geometry={geometry} position={[xOffset, 0, 0]}>
+    <mesh geometry={geometry} position={[xOffset + cx, cy, 0]}>
       <meshStandardMaterial color="#e5e1d8" metalness={0} roughness={0.65} />
     </mesh>
   );
