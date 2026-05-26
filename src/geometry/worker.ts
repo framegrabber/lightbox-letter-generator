@@ -47,7 +47,7 @@ ctx.onmessage = async (ev: MessageEvent<WorkerRequest>) => {
       backThickness: req.params.backThickness,
       wallThickness: req.params.wallThickness,
       rabbetDepth: req.params.rabbetDepth,
-      rabbetLipWidth: req.params.rabbetLipWidth,
+      insetWidth: req.params.insetWidth,
     });
 
     if (!meshResult.ok) {
@@ -67,7 +67,7 @@ ctx.onmessage = async (ev: MessageEvent<WorkerRequest>) => {
     const layerResult = await buildLetterLayers({
       contours,
       wallThickness: req.params.wallThickness,
-      rabbetLipWidth: req.params.rabbetLipWidth,
+      insetWidth: req.params.insetWidth,
     });
     if (layerResult) {
       layers.push({ char, index: i, ...layerResult });

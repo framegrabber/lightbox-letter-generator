@@ -62,7 +62,7 @@ type Parameters = {
   totalDepth: number;            // Z-extent of the box, mm
   backThickness: number;         // floor thickness, mm
   rabbetDepth: number;           // == plexi sheet thickness, mm
-  rabbetLipWidth: number;        // visible lip from outer wall, mm; must be < wallThickness so the lip carves into the wall material rather than eating it
+  insetWidth: number;            // shelf width where the plexi rests, mm; lip = wallThickness − insetWidth (must be < wallThickness so a lip remains)
   bezierTolerance: number;       // glyph flattening, mm (advanced)
 };
 ```
@@ -74,7 +74,7 @@ All units in mm.
 A pure `validate(params, font)` function returns `{ ok: true, derived }` or `{ ok: false, errors }`. Rules:
 
 - `rabbetDepth < totalDepth − backThickness` (rabbet must fit above floor + leave wall above floor)
-- `rabbetLipWidth < wallThickness` (the lip is carved into the wall; if it equaled or exceeded the wall, there would be no material to support the plexi shelf)
+- `0 < insetWidth < wallThickness` (the shelf is carved into the wall; equal-or-greater leaves no lip, zero leaves no shelf for the plexi)
 - `wallThickness × 2 < min_glyph_stem_width` for every letter present in `text` (otherwise offset collapses the cavity)
 - `letterHeight > 0`, `bezierTolerance > 0`, all numeric params finite
 
@@ -98,7 +98,7 @@ opentype.js gives a `Path` of move/line/quad/cubic commands. Flatten beziers to 
 
 - `outer` = glyph polygons as-is
 - `cavity` = `outer.offset(-wallThickness)` (the hollow inside the walls)
-- `rabbetCut` = `outer.offset(-rabbetLipWidth)` (the plexi-shaped cutout; because `rabbetLipWidth < wallThickness`, this polygon is larger than `cavity` and its hole on the front face contains the cavity hole, producing a visible rabbet shelf)
+- `rabbetCut` = `outer.offset(-(wallThickness − insetWidth))` (the plexi-shaped cutout; the lip width is what's left of the wall after the shelf, and because `insetWidth < wallThickness`, this polygon is larger than `cavity` and its hole on the front face contains the cavity hole, producing a visible rabbet shelf)
 
 If any offset returns empty for a letter, fail validation for that letter with a clear error.
 
@@ -150,7 +150,7 @@ Single page, two-column layout. No routing.
 
 - Text input: textarea, newline-delimited (each line is its own run; no cross-line layout)
 - Font picker: dropdown of bundled fonts + "Upload TTF/OTF…" button. Selected font shown as a small preview strip rendering the current text.
-- Parameter inputs grouped: **Size** (letterHeight), **Walls** (wallThickness, totalDepth, backThickness), **Plexi inset** (rabbetDepth, rabbetLipWidth). Each shows units and live-validates.
+- Parameter inputs grouped: **Size** (letterHeight), **Walls** (wallThickness, totalDepth, backThickness), **Plexi inset** (rabbetDepth, insetWidth). Each shows units and live-validates.
 - Inline validation errors under offending controls, with letter name where relevant.
 - "Advanced" collapsible: bezierTolerance.
 - Export buttons at bottom: **Download STL (.zip)** and **Download SVG (.zip)**.

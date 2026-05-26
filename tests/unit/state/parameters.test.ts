@@ -15,7 +15,7 @@ describe("parameters store", () => {
     expect(state.totalDepth).toBe(100);
     expect(state.backThickness).toBe(2);
     expect(state.rabbetDepth).toBe(5);
-    expect(state.rabbetLipWidth).toBe(5);
+    expect(state.insetWidth).toBe(5);
     expect(state.bezierTolerance).toBe(0.1);
   });
 

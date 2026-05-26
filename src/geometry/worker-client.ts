@@ -59,7 +59,7 @@ export function build(params: Parameters, fontBuffer: ArrayBuffer): Promise<Buil
     totalDepth: params.totalDepth,
     backThickness: params.backThickness,
     rabbetDepth: params.rabbetDepth,
-    rabbetLipWidth: params.rabbetLipWidth,
+    insetWidth: params.insetWidth,
     bezierTolerance: params.bezierTolerance,
   };
   return new Promise((resolve, reject) => {

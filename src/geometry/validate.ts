@@ -9,7 +9,7 @@ export function validate(p: Parameters): ValidationResult {
 
   const positives = [
     "letterHeight", "wallThickness", "totalDepth",
-    "backThickness", "rabbetDepth", "rabbetLipWidth", "bezierTolerance",
+    "backThickness", "rabbetDepth", "insetWidth", "bezierTolerance",
   ] as const;
   for (const f of positives) {
     const v = p[f];
@@ -31,11 +31,11 @@ export function validate(p: Parameters): ValidationResult {
     }
   }
 
-  if (Number.isFinite(p.rabbetLipWidth) && Number.isFinite(p.wallThickness)) {
-    if (p.rabbetLipWidth >= p.wallThickness) {
+  if (Number.isFinite(p.insetWidth) && Number.isFinite(p.wallThickness)) {
+    if (p.insetWidth >= p.wallThickness) {
       errors.push({
-        field: "rabbetLipWidth",
-        message: "Rabbet lip width must be less than wall thickness (the lip carves into the wall material)",
+        field: "insetWidth",
+        message: "Inset width must be less than wall thickness (the shelf is carved into the wall material)",
       });
     }
   }

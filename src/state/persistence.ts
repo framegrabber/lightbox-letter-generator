@@ -8,17 +8,28 @@ type Serializable = Omit<Parameters, "fontSource"> & {
   fontSource: { kind: "bundled"; id: string } | { kind: "uploaded"; name: string; sha256: string };
 };
 
+// Translate any deprecated field names from older saves into current shape.
+function migrate(raw: Record<string, unknown>): Partial<Parameters> {
+  const out: Record<string, unknown> = { ...raw };
+  if (typeof out.rabbetLipWidth === "number" && typeof out.wallThickness === "number") {
+    // Old name = lip width from outer; new name = shelf width.
+    out.insetWidth = out.wallThickness - out.rabbetLipWidth;
+  }
+  delete out.rabbetLipWidth;
+  return out as Partial<Parameters>;
+}
+
 function fromQueryOrStorage(): Partial<Parameters> | null {
   try {
     const url = new URL(window.location.href);
     const q = url.searchParams.get(URL_KEY);
-    if (q) return JSON.parse(q) as Partial<Parameters>;
+    if (q) return migrate(JSON.parse(q) as Record<string, unknown>);
   } catch {
     // ignore — fall through to localStorage
   }
   try {
     const raw = window.localStorage.getItem(LS_KEY);
-    if (raw) return JSON.parse(raw) as Partial<Parameters>;
+    if (raw) return migrate(JSON.parse(raw) as Record<string, unknown>);
   } catch {
     // ignore
   }
@@ -40,7 +51,7 @@ export function initPersistence(): void {
       totalDepth: state.totalDepth,
       backThickness: state.backThickness,
       rabbetDepth: state.rabbetDepth,
-      rabbetLipWidth: state.rabbetLipWidth,
+      insetWidth: state.insetWidth,
       bezierTolerance: state.bezierTolerance,
     };
     const json = JSON.stringify(ser);

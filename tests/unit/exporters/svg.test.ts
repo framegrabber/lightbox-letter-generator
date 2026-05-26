@@ -48,7 +48,7 @@ describe("buildLetterLayers", () => {
     const layers = await buildLetterLayers({
       contours: contoursFor("O"),
       wallThickness: 5,
-      rabbetLipWidth: 2,
+      insetWidth: 3, // shelf width; lip = wall − inset = 2mm
     });
     expect(layers).not.toBeNull();
     if (!layers) return;

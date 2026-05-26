@@ -18,20 +18,20 @@ describe("validate", () => {
     }
   });
 
-  it("rejects rabbetLipWidth >= wallThickness", () => {
-    const r = validate({ ...ok, rabbetLipWidth: 3, wallThickness: 3 });
+  it("rejects insetWidth >= wallThickness", () => {
+    const r = validate({ ...ok, insetWidth: 3, wallThickness: 3 });
     expect(r.ok).toBe(false);
     if (!r.ok) {
-      expect(r.errors.some((e: ValidationError) => e.field === "rabbetLipWidth")).toBe(true);
+      expect(r.errors.some((e: ValidationError) => e.field === "insetWidth")).toBe(true);
     }
-    const r2 = validate({ ...ok, rabbetLipWidth: 5, wallThickness: 3 });
+    const r2 = validate({ ...ok, insetWidth: 5, wallThickness: 3 });
     expect(r2.ok).toBe(false);
   });
 
   it("rejects non-positive numeric params", () => {
     for (const field of [
       "letterHeight", "wallThickness", "totalDepth", "backThickness",
-      "rabbetDepth", "rabbetLipWidth", "bezierTolerance",
+      "rabbetDepth", "insetWidth", "bezierTolerance",
     ] as const) {
       const r = validate({ ...ok, [field]: 0 });
       expect(r.ok).toBe(false);

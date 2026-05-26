@@ -7,7 +7,7 @@ export type ShellInputs = {
   backThickness: number;
   wallThickness: number;
   rabbetDepth: number;
-  rabbetLipWidth: number;
+  insetWidth: number; // shelf width where the plexi rests; lip = wallThickness − insetWidth
 };
 
 export type ShellMeshResult =
@@ -27,7 +27,11 @@ export async function buildLetterShell(input: ShellInputs): Promise<ShellMeshRes
 
   const outer = new CrossSection(input.contours, "NonZero");
   const cavity = outer.offset(-input.wallThickness, "Round");
-  const rabbetCut = outer.offset(-input.rabbetLipWidth, "Round");
+  // The rabbet polygon is offset inward by the lip width (wall − shelf).
+  // insetWidth is the shelf where plexi rests; the lip is whatever is left
+  // of the wall after carving out that shelf.
+  const lipWidth = input.wallThickness - input.insetWidth;
+  const rabbetCut = outer.offset(-lipWidth, "Round");
 
   if (cavity.isEmpty() || rabbetCut.isEmpty()) {
     outer.delete();

@@ -19,7 +19,7 @@ describe("buildLetterShell", () => {
     backThickness: 2,
     wallThickness: 5,
     rabbetDepth: 3,
-    rabbetLipWidth: 2,
+    insetWidth: 3, // shelf width; lip = wall − inset = 2mm (matches the old rabbetLipWidth: 2)
   };
 
   function contoursFor(ch: string) {
@@ -46,7 +46,7 @@ describe("buildLetterShell", () => {
     const result = await buildLetterShell({
       ...baseInputs,
       wallThickness: 50,
-      rabbetLipWidth: 40,
+      insetWidth: 10,
       contours: contoursFor("i"),
     });
     expect(result.ok).toBe(false);

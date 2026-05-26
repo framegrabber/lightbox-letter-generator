@@ -66,11 +66,11 @@ export function ControlsPanel() {
           error={errorFor(errs, "rabbetDepth")}
         />
         <NumberField
-          label="Rabbet lip width"
+          label="Inset width"
           unit="mm"
-          value={params.rabbetLipWidth}
-          onChange={(v) => params.set({ rabbetLipWidth: v })}
-          error={errorFor(errs, "rabbetLipWidth")}
+          value={params.insetWidth}
+          onChange={(v) => params.set({ insetWidth: v })}
+          error={errorFor(errs, "insetWidth")}
         />
       </fieldset>
 

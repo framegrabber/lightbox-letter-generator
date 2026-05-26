@@ -70,7 +70,7 @@ export function usePreviewBuild() {
     params.totalDepth,
     params.backThickness,
     params.rabbetDepth,
-    params.rabbetLipWidth,
+    params.insetWidth,
     params.bezierTolerance,
   ]);
 
