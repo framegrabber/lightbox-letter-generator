@@ -17,14 +17,14 @@ export type Parameters = {
 };
 
 export const DEFAULT_PARAMETERS: Parameters = {
-  text: "",
-  fontSource: { kind: "bundled", id: "inter" },
-  letterHeight: 100,
-  wallThickness: 3,
-  totalDepth: 25,
+  text: "BURGER",
+  fontSource: { kind: "bundled", id: "anton" },
+  letterHeight: 200,
+  wallThickness: 10,
+  totalDepth: 100,
   backThickness: 2,
-  rabbetDepth: 3,
-  rabbetLipWidth: 1.5,
+  rabbetDepth: 5,
+  rabbetLipWidth: 5,
   bezierTolerance: 0.1,
 };
 

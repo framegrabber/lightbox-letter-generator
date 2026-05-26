@@ -8,13 +8,14 @@ describe("parameters store", () => {
 
   it("starts with defaults", () => {
     const state = useParameters.getState();
-    expect(state.text).toBe("");
-    expect(state.letterHeight).toBe(100);
-    expect(state.wallThickness).toBe(3);
-    expect(state.totalDepth).toBe(25);
+    expect(state.text).toBe("BURGER");
+    expect(state.fontSource).toEqual({ kind: "bundled", id: "anton" });
+    expect(state.letterHeight).toBe(200);
+    expect(state.wallThickness).toBe(10);
+    expect(state.totalDepth).toBe(100);
     expect(state.backThickness).toBe(2);
-    expect(state.rabbetDepth).toBe(3);
-    expect(state.rabbetLipWidth).toBe(1.5);
+    expect(state.rabbetDepth).toBe(5);
+    expect(state.rabbetLipWidth).toBe(5);
     expect(state.bezierTolerance).toBe(0.1);
   });
 
