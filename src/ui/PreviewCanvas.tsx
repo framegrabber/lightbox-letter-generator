@@ -52,14 +52,19 @@ function SceneSetup({ fitToken }: { fitToken: number }) {
       if (maxDim === 0) return;
       const dist = maxDim * 2.2;
 
+      // Bias the focal point toward the start of the word (LTR-natural):
+      // letters extend along +X, so target the first ~25% of the bbox so
+      // the leftmost letter dominates the view and the rest reads into it.
+      const target = new THREE.Vector3(box.min.x + size.x * 0.25, center.y, center.z);
+
       camera.position.set(
-        center.x + dist * 0.6,
-        center.y - dist * 0.5,
-        center.z + dist * 0.7,
+        target.x + dist * 0.6,
+        target.y - dist * 0.5,
+        target.z + dist * 0.7,
       );
-      camera.lookAt(center);
+      camera.lookAt(target);
       if (controls) {
-        controls.target.copy(center);
+        controls.target.copy(target);
         controls.update();
       }
       hasFitOnce.current = true;
