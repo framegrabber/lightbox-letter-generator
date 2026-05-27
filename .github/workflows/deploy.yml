@@ -13,14 +13,19 @@ concurrency:
   group: pages
   cancel-in-progress: true
 
+# Opt the runner into Node 24 for any actions that still ship Node 20 internals.
+# Removable once all actions below natively target Node 24.
+env:
+  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: "true"
+
 jobs:
   build:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v5
         with:
-          node-version: 20
+          node-version: 22
           cache: npm
       - run: npm ci
       - run: npm run build
