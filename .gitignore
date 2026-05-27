@@ -16,6 +16,13 @@ dist-ssr
 test-results
 playwright-report
 playwright/.cache
+.playwright-mcp/
+
+# Stray debug screenshots dumped at the project root.
+# (Intentional images live under docs/img/.)
+/*.png
+/*.jpg
+/*.jpeg
 
 # Editor directories and files
 .vscode/*
