@@ -9,6 +9,15 @@ export default function App() {
       <div className="app">
         <ControlsPanel />
         <PreviewCanvas />
+        <footer className="app-footer">
+          <a
+            href="https://github.com/framegrabber/lightbox-letter-generator"
+            target="_blank"
+            rel="noopener noreferrer"
+          >
+            View source on GitHub
+          </a>
+        </footer>
       </div>
     </PreviewBuildProvider>
   );
