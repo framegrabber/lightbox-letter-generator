@@ -48,7 +48,11 @@ export function ExportButtons({ disabled }: Props) {
         chars: l.members.map((m) => m.char).join(""),
         svg: polygonsToSVG(l.plexi, { margin: 1 }),
       }));
-      const readme = buildReadme(params, buildReproduceUrl(params));
+      const pieces = result.components.map((c) => ({
+        chars: c.members.map((m) => m.char).join(""),
+        count: c.members.length,
+      }));
+      const readme = buildReadme(params, buildReproduceUrl(params), pieces);
       const blob = await bundleAll(stls, plexis, readme);
       saveAs(blob, `lightbox-${Date.now()}.zip`);
     } finally {
