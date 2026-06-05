@@ -112,6 +112,23 @@ describe("mergeIntoComponents", () => {
     expect(result.warnings[0].kind).toBe("bridge_disconnected");
   });
 
+  it("bridge does not connect letters across spaces", async () => {
+    // Simulate "A B" — A at original index 0, B at original index 2.
+    const layout: LayoutEntry[] = [entry("A", 0, 0), entry("B", 100, 2)];
+    const contours = new Map<number, GlyphContours>([
+      [0, square(0, 0, 50)],
+      [2, square(0, 0, 50)],
+    ]);
+    const result = await mergeIntoComponents(layout, contours, {
+      letterOverlap: 0,
+      bridgeWidth: 200,
+      bridgeHeight: 10,
+      bridgeY: 0,
+    });
+    expect(result.components.length).toBe(2);
+    expect(result.warnings).toEqual([]);
+  });
+
   it("member.index carries original text position through spaces", async () => {
     // Simulate "A B" — A at original index 0, B at original index 2 (space at index 1).
     const layout: LayoutEntry[] = [entry("A", 0, 0), entry("B", 100, 2)];

@@ -108,6 +108,11 @@ export async function mergeIntoComponents(
     for (let i = 0; i + 1 < letters.length; i++) {
       const a = letters[i];
       const b = letters[i + 1];
+      // Spec invariant: spaces split components, so a bridge must not connect
+      // across a space in the original text. ComponentMember.index is the
+      // original text index, so any gap > 1 means at least one whitespace
+      // character was filtered out between them.
+      if (b.member.index - a.member.index > 1) continue;
       const center = (a.bbox.maxX + b.bbox.minX) / 2;
       const halfW = params.bridgeWidth / 2;
       const halfH = params.bridgeHeight / 2;

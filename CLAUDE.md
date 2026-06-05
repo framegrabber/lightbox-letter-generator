@@ -25,7 +25,7 @@ npm run lint     # ESLint flat config
 
 ## Layout
 
-- `src/geometry/` — pure-function pipeline (no React, no DOM): `flatten` → `scale` → `shell` (CSG) → `layout`. `worker.ts` orchestrates per-letter; `manifold-init.ts` is the WASM singleton.
+- `src/geometry/` — pure-function pipeline (no React, no DOM): `flatten` → `scale` → `layout` → `merge` → `shell` (CSG). `worker.ts` orchestrates per-component; `manifold-init.ts` is the WASM singleton.
 - `src/exporters/` — `stl.ts` (binary STL writer), `svg.ts` (`polygonsToSVG` + `buildLetterLayers`), `zip.ts` (single `bundleAll`), `manifest.ts` (now `buildReadme`, name kept for history).
 - `src/state/` — `parameters.ts`, `ui.ts`, `persistence.ts` (URL + localStorage with migration).
 - `src/ui/` — React components, three.js preview, controls panel.
@@ -133,6 +133,7 @@ lightbox-<timestamp>.zip
 ## Spec / plan
 
 - Spec is current with code: `docs/superpowers/specs/2026-05-22-lightbox-letter-generator-design.md`.
+- Connected-letters feature spec: `docs/superpowers/specs/2026-06-05-connected-letters-design.md` (current with code).
 - Implementation plan in `docs/superpowers/plans/` is **historical** — frozen at v1, contains stale references (e.g. `rabbetLipWidth`). Treat as an artifact; don't update.
 
 ## Working with this code
