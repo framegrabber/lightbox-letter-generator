@@ -229,10 +229,10 @@ function unionAll(
   CrossSection: typeof import("manifold-3d").CrossSection,
 ): GlyphContours {
   if (sets.length === 0) return [];
-  let acc: import("manifold-3d").CrossSection | null = new CrossSection(sets[0], "NonZero");
+  let acc: import("manifold-3d").CrossSection = new CrossSection(sets[0], "NonZero");
   for (let i = 1; i < sets.length; i++) {
     const next = new CrossSection(sets[i], "NonZero");
-    const merged = acc.add(next);
+    const merged: import("manifold-3d").CrossSection = acc.add(next);
     acc.delete();
     next.delete();
     acc = merged;
