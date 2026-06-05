@@ -99,6 +99,38 @@ export function ControlsPanel() {
         <PlexiToggle />
       </fieldset>
 
+      <fieldset>
+        <legend>Connectors</legend>
+        <NumberField
+          label="Letter overlap"
+          unit="mm"
+          value={params.letterOverlap}
+          onChange={(v) => params.set({ letterOverlap: v })}
+          error={errorFor(errs, "letterOverlap")}
+        />
+        <NumberField
+          label="Bridge width"
+          unit="mm"
+          value={params.bridgeWidth}
+          onChange={(v) => params.set({ bridgeWidth: v })}
+          error={errorFor(errs, "bridgeWidth")}
+        />
+        <NumberField
+          label="Bridge height"
+          unit="mm"
+          value={params.bridgeHeight}
+          onChange={(v) => params.set({ bridgeHeight: v })}
+          error={errorFor(errs, "bridgeHeight")}
+        />
+        <NumberField
+          label="Bridge Y"
+          unit="mm"
+          value={params.bridgeY}
+          onChange={(v) => params.set({ bridgeY: v })}
+          error={errorFor(errs, "bridgeY")}
+        />
+      </fieldset>
+
       <details>
         <summary>Advanced</summary>
         <NumberField
