@@ -50,8 +50,9 @@ npm run lint     # ESLint flat config
 ## Worker contract — `src/geometry/worker.ts` ↔ `src/geometry/worker-client.ts`
 
 - Types are canonical in `worker-client.ts`; `worker.ts` imports them via `import type`.
-- **`LetterMesh.index` is the ORIGINAL text index, including spaces.** `PreviewCanvas` looks up letters by the index returned from `Array.from(text)`. Don't switch to a filtered (no-spaces) index — that bug previously broke `"ipsum ipsum"` and `" opsum"`.
-- Each letter ships with a shell mesh AND a plexi mesh, both shifted by the same `(cx, cy)` so they align in the scene.
+- **`ComponentMesh.members[].index` is the ORIGINAL text index, including spaces.** Each member preserves the position of its character in the source text — used by the worker to key glyph contours. Don't switch to a filtered (no-spaces) index — that bug previously broke `"ipsum ipsum"` and `" opsum"`.
+- A component may contain one or more letters. Default params produce one letter per component (today's behavior). When `letterOverlap > 0` or a bridge is configured, adjacent letters merge into a single component with one merged shell, plexi, and STL.
+- Each component ships with a shell mesh AND a plexi mesh, both shifted by the same `(cx, cy)` so they align in the scene.
 - All typed-array buffers are listed as transferables on `postMessage`.
 - The promise rejects on `worker.onerror`; `usePreviewBuild` wraps the await in try/catch/finally so `busy` always resets. Without that, a worker exception leaves the UI permanently in "Generating…".
 
@@ -70,6 +71,16 @@ npm run lint     # ESLint flat config
 - `state/parameters.ts` — the design parameters (text, font, dimensions, etc.). Persisted to URL `?p=<JSON>` + localStorage on every change.
 - `state/ui.ts` — session-only UI flags (`showCameraHUD`, `showPlexi`). NOT persisted.
 - `state/persistence.ts` — `migrate()` translates legacy `rabbetLipWidth` saves; `URLSearchParams.set` handles encoding (don't double-encode).
+
+## Connected mode
+
+`letterOverlap`, `bridgeWidth`, `bridgeHeight`, `bridgeY` (in `state/parameters.ts`) drive the merge stage. With all four at zero/default, every letter forms its own component and behavior is identical to today's per-letter STLs.
+
+`src/geometry/merge.ts` is the heart of the feature: it translates each glyph's contours by its `xOffset`, optionally adds bridge rectangles between consecutive non-space pairs, runs union-find by `CrossSection.intersect` non-empty, and unions each connected group into one merged contour set. A single-member group with no bridges takes a fast path and skips the CrossSection round-trip.
+
+A bridge that doesn't actually touch both endpoints (e.g. `bridgeY` outside the letters' Y range) emits a `bridge_disconnected` warning and is dropped — the component split is unchanged.
+
+`bridgeY` defaults to `-letterHeight / 2` because letters span `Y ∈ [-letterHeight, 0]` after `flatten.ts`'s Y-flip. The default does not auto-update when `letterHeight` changes; an intentional user value is preserved.
 
 ## `NumberField` behaviour
 
@@ -91,17 +102,18 @@ Local string state lets the user clear the input or type intermediate values lik
 ```
 lightbox-<timestamp>.zip
 ├── README.txt              # human-readable params + reproduce URL
-├── stl/01_<letter>.stl …   # 3D shells
-└── plexi/01_<letter>.svg … # plexi cut shapes only
+├── stl/01_<chars>.stl …    # 3D shells (one per connected component)
+└── plexi/01_<chars>.svg …  # plexi cut shapes only
 ```
 
 - One entry point: `bundleAll(stls, plexis, readme)`.
 - `buildReadme(params, reproduceUrl)` produces the README text. The reproduce URL is built from `window.location.origin + window.location.pathname + "?p=" + JSON.stringify(serializableParams)` in `ExportButtons`.
+- `<chars>` is the joined member chars per component (e.g. `BURGER` if all letters merge, `H`/`i` if they don't), sanitized to `[A-Za-z0-9_-]`. Empty/all-non-ASCII fallback is `componentNN`. The README's "Pieces" section enumerates the slots.
 - The earlier four-layer SVG export (back/wall/rabbet/plexi) and `manifest.json` are GONE. Don't reintroduce them without an explicit ask.
 
 ## Tests
 
-- 42 Vitest unit tests, mirrors the `src/` layout under `tests/unit/`.
+- 69 Vitest unit tests, mirrors the `src/` layout under `tests/unit/`.
 - `tests/e2e/smoke.spec.ts` exercises full type → download. It sets explicit params (text, height, wall thickness, inset) so it doesn't depend on the current defaults — when defaults change, the test still passes. It asserts the zip layout (`stl/`, `plexi/`, `README.txt`, no `manifest.json`).
 - Test fixture font: `tests/fixtures/fonts/Inter-Regular.ttf`.
 
