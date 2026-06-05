@@ -7,6 +7,7 @@ import { useUI } from "../state/ui";
 import { usePreviewBuildContext } from "./usePreviewBuildContext";
 import { PreviewLetter } from "./PreviewLetter";
 import { layoutWord } from "../geometry/layout";
+import type { ComponentMesh } from "../geometry/worker-client";
 
 // Auto-fit defaults: where the focal point sits inside the bbox, the camera
 // distance multiplier, and the unit-vector direction from target to camera.
@@ -124,8 +125,7 @@ export function PreviewCanvas() {
   // merge stage lands, multi-member components show up at the index of any one
   // of their members. We render one mesh per *component*, keyed by the leftmost
   // member's index, so we de-duplicate when multiple positions share a component.
-  const componentByIndex = new Map<number, typeof result extends { components: infer C }
-    ? C extends Array<infer M> ? M : never : never>();
+  const componentByIndex = new Map<number, ComponentMesh>();
   if (result) {
     for (const c of result.components) {
       for (const m of c.members) componentByIndex.set(m.index, c);
