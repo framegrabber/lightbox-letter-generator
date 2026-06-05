@@ -72,6 +72,10 @@ export function usePreviewBuild() {
     params.rabbetDepth,
     params.insetWidth,
     params.bezierTolerance,
+    params.letterOverlap,
+    params.bridgeWidth,
+    params.bridgeHeight,
+    params.bridgeY,
   ]);
 
   return { result, busy, layoutFont };

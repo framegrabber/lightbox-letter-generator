@@ -21,6 +21,10 @@ function buildReproduceUrl(params: Parameters): string {
     rabbetDepth: params.rabbetDepth,
     insetWidth: params.insetWidth,
     bezierTolerance: params.bezierTolerance,
+    letterOverlap: params.letterOverlap,
+    bridgeWidth: params.bridgeWidth,
+    bridgeHeight: params.bridgeHeight,
+    bridgeY: params.bridgeY,
   };
   const url = new URL(window.location.origin + window.location.pathname);
   url.searchParams.set("p", JSON.stringify(serializable));
@@ -33,17 +37,15 @@ export function ExportButtons({ disabled }: Props) {
   const [busy, setBusy] = useState(false);
 
   async function exportZip() {
-    if (!result || result.letters.length === 0) return;
+    if (!result || result.components.length === 0) return;
     setBusy(true);
     try {
-      const stls = result.letters.map((l) => ({
-        char: l.char,
-        index: l.index,
-        stl: meshToBinarySTL({ vertProperties: l.vertProperties, triVerts: l.triVerts }),
+      const stls = result.components.map((c) => ({
+        chars: c.members.map((m) => m.char).join(""),
+        stl: meshToBinarySTL({ vertProperties: c.vertProperties, triVerts: c.triVerts }),
       }));
       const plexis = result.layers.map((l) => ({
-        char: l.char,
-        index: l.index,
+        chars: l.members.map((m) => m.char).join(""),
         svg: polygonsToSVG(l.plexi, { margin: 1 }),
       }));
       const readme = buildReadme(params, buildReproduceUrl(params));
@@ -54,7 +56,7 @@ export function ExportButtons({ disabled }: Props) {
     }
   }
 
-  const empty = !result || result.letters.length === 0;
+  const empty = !result || result.components.length === 0;
 
   return (
     <div className="export-buttons">

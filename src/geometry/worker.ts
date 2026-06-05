@@ -6,9 +6,10 @@ import { buildLetterShell, buildLetterPlexi, centerMeshXY } from "./shell";
 import { buildLetterLayers } from "../exporters/svg";
 import type { Parameters } from "../state/parameters";
 import type {
-  LetterMesh,
-  LetterLayers,
-  LetterError,
+  ComponentMesh,
+  ComponentLayers,
+  ComponentError,
+  MergeWarning,
   WorkerResponse,
 } from "./worker-client";
 
@@ -27,16 +28,16 @@ ctx.onmessage = async (ev: MessageEvent<WorkerRequest>) => {
 
   const font = opentype.parse(req.fontBuffer);
   const scale = capHeightScale(font, req.params.letterHeight);
-  // Keep the original text index (including spaces) so the preview can
-  // match letters to their layout slots even when the text contains spaces.
+
   const visibleChars: { ch: string; origIndex: number }[] = [];
   Array.from(req.params.text).forEach((c, i) => {
     if (!/\s/.test(c)) visibleChars.push({ ch: c, origIndex: i });
   });
 
-  const letters: LetterMesh[] = [];
-  const layers: LetterLayers[] = [];
-  const errors: LetterError[] = [];
+  const components: ComponentMesh[] = [];
+  const layers: ComponentLayers[] = [];
+  const errors: ComponentError[] = [];
+  const warnings: MergeWarning[] = [];
 
   for (const { ch: char, origIndex } of visibleChars) {
     const glyph = font.charToGlyph(char);
@@ -44,6 +45,8 @@ ctx.onmessage = async (ev: MessageEvent<WorkerRequest>) => {
     const contours = rawContours.map(
       (p) => p.map(([x, y]) => [x * scale, y * scale] as [number, number]),
     );
+
+    const member = { char, index: origIndex };
 
     const meshResult = await buildLetterShell({
       contours,
@@ -55,14 +58,12 @@ ctx.onmessage = async (ev: MessageEvent<WorkerRequest>) => {
     });
 
     if (!meshResult.ok) {
-      errors.push({ char, index: origIndex, reason: meshResult.reason });
+      errors.push({ members: [member], reason: meshResult.reason });
       continue;
     }
 
     const centered = centerMeshXY(meshResult.mesh);
 
-    // Build the plexi mesh for this letter and shift it by the same
-    // (cx, cy) the shell got from centerMeshXY so it stays aligned.
     const plexiRaw = await buildLetterPlexi({
       contours,
       totalDepth: req.params.totalDepth,
@@ -84,12 +85,12 @@ ctx.onmessage = async (ev: MessageEvent<WorkerRequest>) => {
       plexi = { vertProperties: out, triVerts: plexiRaw.triVerts };
     }
 
-    letters.push({
-      char,
-      index: origIndex,
+    components.push({
+      members: [member],
       vertProperties: centered.vertProperties,
       triVerts: centered.triVerts,
       bbox: centered.bbox,
+      xOffset: 0, // no word-space translation yet; layout positions are applied in PreviewLetter
       plexi,
     });
 
@@ -99,17 +100,23 @@ ctx.onmessage = async (ev: MessageEvent<WorkerRequest>) => {
       insetWidth: req.params.insetWidth,
     });
     if (layerResult) {
-      layers.push({ char, index: origIndex, ...layerResult });
+      layers.push({ members: [member], ...layerResult });
     }
   }
 
-  const response: WorkerResponse = { requestId: req.requestId, letters, layers, errors };
+  const response: WorkerResponse = {
+    requestId: req.requestId,
+    components,
+    layers,
+    errors,
+    warnings,
+  };
 
   const transferables: Transferable[] = [];
-  for (const l of letters) {
-    transferables.push(l.vertProperties.buffer, l.triVerts.buffer);
-    if (l.plexi) {
-      transferables.push(l.plexi.vertProperties.buffer, l.plexi.triVerts.buffer);
+  for (const c of components) {
+    transferables.push(c.vertProperties.buffer, c.triVerts.buffer);
+    if (c.plexi) {
+      transferables.push(c.plexi.vertProperties.buffer, c.plexi.triVerts.buffer);
     }
   }
   ctx.postMessage(response, transferables);

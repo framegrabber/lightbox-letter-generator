@@ -33,7 +33,7 @@ function SceneSetup({ fitToken }: { fitToken: number }) {
   // clearing text and retyping) do not move the camera. The Fit button is the
   // explicit way to recenter.
   useEffect(() => {
-    if (!result || result.letters.length === 0) return;
+    if (!result || result.components.length === 0) return;
     if (hasFitOnce.current && fitToken === 0) return;
 
     const id = requestAnimationFrame(() => {
@@ -116,8 +116,21 @@ export function PreviewCanvas() {
   const hudRef = useRef<HTMLDivElement | null>(null);
   const [copied, setCopied] = useState(false);
 
-  const positions = layoutFont ? layoutWord(layoutFont, params.text, params.letterHeight) : [];
-  const lettersByIndex = new Map((result?.letters ?? []).map((l) => [l.index, l]));
+  const positions = layoutFont
+    ? layoutWord(layoutFont, params.text, params.letterHeight, params.letterOverlap)
+    : [];
+  // Map a non-space original-text index to the component that owns it.
+  // While Task 3 is in flight every component has exactly one member; once the
+  // merge stage lands, multi-member components show up at the index of any one
+  // of their members. We render one mesh per *component*, keyed by the leftmost
+  // member's index, so we de-duplicate when multiple positions share a component.
+  const componentByIndex = new Map<number, typeof result extends { components: infer C }
+    ? C extends Array<infer M> ? M : never : never>();
+  if (result) {
+    for (const c of result.components) {
+      for (const m of c.members) componentByIndex.set(m.index, c);
+    }
+  }
 
   const visibleCharIndices: number[] = [];
   Array.from(params.text).forEach((c, i) => {
@@ -138,12 +151,21 @@ export function PreviewCanvas() {
         />
         <SceneSetup fitToken={fitToken} />
         {showCameraHUD && <CameraHUD hudRef={hudRef} />}
-        {positions.map((p, i) => {
-          const originalIndex = visibleCharIndices[i];
-          const letter = lettersByIndex.get(originalIndex);
-          if (!letter) return null;
-          return <PreviewLetter key={`${i}-${p.char}`} letter={letter} xOffset={p.xOffset} />;
-        })}
+        {(() => {
+          const renderedComponents = new Set<unknown>();
+          return positions.map((p, i) => {
+            const originalIndex = visibleCharIndices[i];
+            const component = componentByIndex.get(originalIndex);
+            if (!component) return null;
+            // Render each component once, at its leftmost member's xOffset.
+            if (renderedComponents.has(component)) return null;
+            renderedComponents.add(component);
+            const leftmost = component.members[0];
+            const leftmostPosIdx = visibleCharIndices.indexOf(leftmost.index);
+            const xOffset = leftmostPosIdx >= 0 ? positions[leftmostPosIdx].xOffset : p.xOffset;
+            return <PreviewLetter key={`${i}-${p.char}`} component={component} xOffset={xOffset} />;
+          });
+        })()}
       </Canvas>
       <button
         className="preview-fit"
@@ -180,7 +202,21 @@ export function PreviewCanvas() {
       {result && result.errors.length > 0 && (
         <div className="preview-errors">
           {result.errors.map((e, i) => (
-            <div key={i}>Letter &lsquo;{e.char}&rsquo;: {e.reason}</div>
+            <div key={i}>
+              {e.members.length === 1 ? "Letter" : "Component"} &lsquo;
+              {e.members.map((m) => m.char).join("")}
+              &rsquo;: {e.reason}
+            </div>
+          ))}
+        </div>
+      )}
+      {result && result.warnings.length > 0 && (
+        <div className="preview-warnings">
+          {result.warnings.map((w, i) => (
+            <div key={i}>
+              Bridge disconnected between &lsquo;{w.pair[0].char}&rsquo; and &lsquo;
+              {w.pair[1].char}&rsquo;
+            </div>
           ))}
         </div>
       )}
