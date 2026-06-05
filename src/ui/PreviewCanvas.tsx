@@ -6,7 +6,6 @@ import { useParameters } from "../state/parameters";
 import { useUI } from "../state/ui";
 import { usePreviewBuildContext } from "./usePreviewBuildContext";
 import { PreviewLetter } from "./PreviewLetter";
-import { layoutWord } from "../geometry/layout";
 
 // Auto-fit defaults: where the focal point sits inside the bbox, the camera
 // distance multiplier, and the unit-vector direction from target to camera.
@@ -33,7 +32,7 @@ function SceneSetup({ fitToken }: { fitToken: number }) {
   // clearing text and retyping) do not move the camera. The Fit button is the
   // explicit way to recenter.
   useEffect(() => {
-    if (!result || result.letters.length === 0) return;
+    if (!result || result.components.length === 0) return;
     if (hasFitOnce.current && fitToken === 0) return;
 
     const id = requestAnimationFrame(() => {
@@ -111,18 +110,10 @@ function CameraHUD({ hudRef }: { hudRef: React.RefObject<HTMLDivElement | null> 
 export function PreviewCanvas() {
   const params = useParameters();
   const showCameraHUD = useUI((s) => s.showCameraHUD);
-  const { result, busy, layoutFont } = usePreviewBuildContext();
+  const { result, busy } = usePreviewBuildContext();
   const [fitToken, setFitToken] = useState(0);
   const hudRef = useRef<HTMLDivElement | null>(null);
   const [copied, setCopied] = useState(false);
-
-  const positions = layoutFont ? layoutWord(layoutFont, params.text, params.letterHeight) : [];
-  const lettersByIndex = new Map((result?.letters ?? []).map((l) => [l.index, l]));
-
-  const visibleCharIndices: number[] = [];
-  Array.from(params.text).forEach((c, i) => {
-    if (!/\s/.test(c)) visibleCharIndices.push(i);
-  });
 
   return (
     <div className="preview-canvas">
@@ -138,12 +129,9 @@ export function PreviewCanvas() {
         />
         <SceneSetup fitToken={fitToken} />
         {showCameraHUD && <CameraHUD hudRef={hudRef} />}
-        {positions.map((p, i) => {
-          const originalIndex = visibleCharIndices[i];
-          const letter = lettersByIndex.get(originalIndex);
-          if (!letter) return null;
-          return <PreviewLetter key={`${i}-${p.char}`} letter={letter} xOffset={p.xOffset} />;
-        })}
+        {result?.components.map((c, i) => (
+          <PreviewLetter key={i} component={c} xOffset={c.xOffset} />
+        )) ?? null}
       </Canvas>
       <button
         className="preview-fit"
@@ -180,7 +168,21 @@ export function PreviewCanvas() {
       {result && result.errors.length > 0 && (
         <div className="preview-errors">
           {result.errors.map((e, i) => (
-            <div key={i}>Letter &lsquo;{e.char}&rsquo;: {e.reason}</div>
+            <div key={i}>
+              {e.members.length === 1 ? "Letter" : "Component"} &lsquo;
+              {e.members.map((m) => m.char).join("")}
+              &rsquo;: {e.reason}
+            </div>
+          ))}
+        </div>
+      )}
+      {result && result.warnings.length > 0 && (
+        <div className="preview-warnings">
+          {result.warnings.map((w, i) => (
+            <div key={i}>
+              Bridge disconnected between &lsquo;{w.pair[0].char}&rsquo; and &lsquo;
+              {w.pair[1].char}&rsquo;
+            </div>
           ))}
         </div>
       )}

@@ -1,9 +1,9 @@
 import { useMemo } from "react";
 import * as THREE from "three";
-import type { LetterMesh } from "../geometry/worker-client";
+import type { ComponentMesh } from "../geometry/worker-client";
 import { useUI } from "../state/ui";
 
-type Props = { letter: LetterMesh; xOffset: number };
+type Props = { component: ComponentMesh; xOffset: number };
 
 function makeFlatGeometry(
   vertProperties: Float32Array,
@@ -19,25 +19,24 @@ function makeFlatGeometry(
   return g;
 }
 
-export function PreviewLetter({ letter, xOffset }: Props) {
+export function PreviewLetter({ component, xOffset }: Props) {
   const showPlexi = useUI((s) => s.showPlexi);
 
   const shellGeometry = useMemo(
-    () => makeFlatGeometry(letter.vertProperties, letter.triVerts),
-    [letter],
+    () => makeFlatGeometry(component.vertProperties, component.triVerts),
+    [component],
   );
 
   const plexiGeometry = useMemo(() => {
-    if (!letter.plexi) return null;
-    return makeFlatGeometry(letter.plexi.vertProperties, letter.plexi.triVerts);
-  }, [letter]);
+    if (!component.plexi) return null;
+    return makeFlatGeometry(component.plexi.vertProperties, component.plexi.triVerts);
+  }, [component]);
 
   // The mesh was centered on its own bbox (so each STL exports centered).
-  // To restore opentype's natural positioning here, shift back by the
-  // original bbox center — otherwise narrow letters would creep left and
-  // wide letters would overhang their advance, causing overlap.
-  const cx = (letter.bbox.minX + letter.bbox.maxX) / 2;
-  const cy = (letter.bbox.minY + letter.bbox.maxY) / 2;
+  // To restore the natural word-space positioning here, shift back by the
+  // original bbox center.
+  const cx = (component.bbox.minX + component.bbox.maxX) / 2;
+  const cy = (component.bbox.minY + component.bbox.maxY) / 2;
 
   return (
     <group position={[xOffset + cx, cy, 0]}>

@@ -40,5 +40,21 @@ export function validate(p: Parameters): ValidationResult {
     }
   }
 
+  // Connected-letters bounds.
+  if (!Number.isFinite(p.letterOverlap) || p.letterOverlap < 0) {
+    errors.push({ field: "letterOverlap", message: "Letter overlap must be ≥ 0" });
+  } else if (Number.isFinite(p.letterHeight) && p.letterOverlap >= p.letterHeight) {
+    errors.push({ field: "letterOverlap", message: "Letter overlap must be less than letter height" });
+  }
+  if (!Number.isFinite(p.bridgeWidth) || p.bridgeWidth < 0) {
+    errors.push({ field: "bridgeWidth", message: "Bridge width must be ≥ 0" });
+  }
+  if (!Number.isFinite(p.bridgeHeight) || p.bridgeHeight < 0) {
+    errors.push({ field: "bridgeHeight", message: "Bridge height must be ≥ 0" });
+  }
+  if (!Number.isFinite(p.bridgeY)) {
+    errors.push({ field: "bridgeY", message: "Bridge Y must be a finite number" });
+  }
+
   return errors.length === 0 ? { ok: true } : { ok: false, errors };
 }

@@ -1,33 +1,39 @@
 import type { Parameters } from "../state/parameters";
 
-export type LetterMesh = {
-  char: string;
-  index: number;
+export type ComponentMember = { char: string; index: number };
+
+export type ComponentMesh = {
+  members: ComponentMember[]; // left-to-right order
   vertProperties: Float32Array;
   triVerts: Uint32Array;
   bbox: { minX: number; minY: number; maxX: number; maxY: number };
+  xOffset: number; // word-space minX before the per-component centering
   plexi: { vertProperties: Float32Array; triVerts: Uint32Array } | null;
 };
 
-export type LetterLayers = {
-  char: string;
-  index: number;
+export type ComponentLayers = {
+  members: ComponentMember[];
   back: [number, number][][];
   wall: [number, number][][];
   rabbet: [number, number][][];
   plexi: [number, number][][];
 };
 
-export type LetterError = {
-  char: string;
-  index: number;
+export type ComponentError = {
+  members: ComponentMember[];
   reason: "offset_collapsed" | "no_contours";
 };
 
+export type MergeWarning = {
+  kind: "bridge_disconnected";
+  pair: [ComponentMember, ComponentMember];
+};
+
 export type BuildResult = {
-  letters: LetterMesh[];
-  layers: LetterLayers[];
-  errors: LetterError[];
+  components: ComponentMesh[];
+  layers: ComponentLayers[];
+  errors: ComponentError[];
+  warnings: MergeWarning[];
 };
 
 let worker: Worker | null = null;
@@ -42,16 +48,15 @@ function ensureWorker(): Worker {
 
 export type WorkerResponse = {
   requestId: string;
-  letters: LetterMesh[];
-  layers: LetterLayers[];
-  errors: LetterError[];
+  components: ComponentMesh[];
+  layers: ComponentLayers[];
+  errors: ComponentError[];
+  warnings: MergeWarning[];
 };
 
 export function build(params: Parameters, fontBuffer: ArrayBuffer): Promise<BuildResult> {
   const w = ensureWorker();
   const requestId = String(++counter);
-  // Extract only the plain data fields. The zustand store passes its full state
-  // (including the `set` function) which is not structured-cloneable.
   const plainParams: Parameters = {
     text: params.text,
     fontSource: params.fontSource,
@@ -62,13 +67,22 @@ export function build(params: Parameters, fontBuffer: ArrayBuffer): Promise<Buil
     rabbetDepth: params.rabbetDepth,
     insetWidth: params.insetWidth,
     bezierTolerance: params.bezierTolerance,
+    letterOverlap: params.letterOverlap,
+    bridgeWidth: params.bridgeWidth,
+    bridgeHeight: params.bridgeHeight,
+    bridgeY: params.bridgeY,
   };
   return new Promise((resolve, reject) => {
     const handler = (ev: MessageEvent<WorkerResponse>) => {
       if (ev.data?.requestId !== requestId) return;
       w.removeEventListener("message", handler);
       w.removeEventListener("error", errorHandler);
-      resolve({ letters: ev.data.letters, layers: ev.data.layers, errors: ev.data.errors });
+      resolve({
+        components: ev.data.components,
+        layers: ev.data.layers,
+        errors: ev.data.errors,
+        warnings: ev.data.warnings,
+      });
     };
     const errorHandler = (e: ErrorEvent) => {
       w.removeEventListener("message", handler);

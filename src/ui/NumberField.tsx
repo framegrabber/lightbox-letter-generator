@@ -10,7 +10,7 @@ type Props = {
   error?: string;
 };
 
-export function NumberField({ label, unit, value, onChange, step = 0.1, min = 0, error }: Props) {
+export function NumberField({ label, unit, value, onChange, step = 0.1, min, error }: Props) {
   const id = useId();
   // Local string state lets the user clear the input or type intermediate
   // values like "" or "5." without the controlled `value` snapping it back.

@@ -48,3 +48,51 @@ describe("validate", () => {
     expect(r.ok).toBe(false);
   });
 });
+
+describe("connected-letters bounds", () => {
+  const base = {
+    text: "ABC",
+    fontSource: { kind: "bundled" as const, id: "anton" },
+    letterHeight: 100,
+    wallThickness: 10,
+    totalDepth: 50,
+    backThickness: 2,
+    rabbetDepth: 5,
+    insetWidth: 5,
+    bezierTolerance: 0.1,
+    letterOverlap: 0,
+    bridgeWidth: 0,
+    bridgeHeight: 0,
+    bridgeY: -50,
+  };
+
+  it("accepts zero defaults", () => {
+    const r = validate(base);
+    expect(r.ok).toBe(true);
+  });
+
+  it("rejects negative letterOverlap", () => {
+    const r = validate({ ...base, letterOverlap: -1 });
+    expect(r.ok).toBe(false);
+  });
+
+  it("rejects letterOverlap >= letterHeight", () => {
+    const r = validate({ ...base, letterOverlap: 100 });
+    expect(r.ok).toBe(false);
+  });
+
+  it("rejects negative bridgeWidth or bridgeHeight", () => {
+    expect(validate({ ...base, bridgeWidth: -1 }).ok).toBe(false);
+    expect(validate({ ...base, bridgeHeight: -1 }).ok).toBe(false);
+  });
+
+  it("accepts negative bridgeY (above baseline in our flipped Y)", () => {
+    const r = validate({ ...base, bridgeY: -200 });
+    expect(r.ok).toBe(true);
+  });
+
+  it("rejects non-finite bridgeY", () => {
+    const r = validate({ ...base, bridgeY: NaN });
+    expect(r.ok).toBe(false);
+  });
+});

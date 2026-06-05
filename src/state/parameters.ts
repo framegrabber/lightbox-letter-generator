@@ -14,18 +14,28 @@ export type Parameters = {
   rabbetDepth: number;
   insetWidth: number;
   bezierTolerance: number;
+  letterOverlap: number;
+  bridgeWidth: number;
+  bridgeHeight: number;
+  bridgeY: number;
 };
+
+const DEFAULT_LETTER_HEIGHT = 200;
 
 export const DEFAULT_PARAMETERS: Parameters = {
   text: "BURGER",
   fontSource: { kind: "bundled", id: "anton" },
-  letterHeight: 200,
+  letterHeight: DEFAULT_LETTER_HEIGHT,
   wallThickness: 10,
   totalDepth: 100,
   backThickness: 2,
   rabbetDepth: 5,
   insetWidth: 5,
   bezierTolerance: 0.1,
+  letterOverlap: 0,
+  bridgeWidth: 0,
+  bridgeHeight: 0,
+  bridgeY: -DEFAULT_LETTER_HEIGHT / 2,
 };
 
 type Store = Parameters & { set: (p: Partial<Parameters>) => void };

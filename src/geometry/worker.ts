@@ -2,13 +2,17 @@
 import opentype from "opentype.js";
 import { flattenGlyph } from "./flatten";
 import { capHeightScale } from "./scale";
+import { layoutWord } from "./layout";
+import { mergeIntoComponents } from "./merge";
 import { buildLetterShell, buildLetterPlexi, centerMeshXY } from "./shell";
 import { buildLetterLayers } from "../exporters/svg";
+import type { GlyphContours } from "./types";
 import type { Parameters } from "../state/parameters";
 import type {
-  LetterMesh,
-  LetterLayers,
-  LetterError,
+  ComponentMesh,
+  ComponentLayers,
+  ComponentError,
+  MergeWarning,
   WorkerResponse,
 } from "./worker-client";
 
@@ -27,26 +31,38 @@ ctx.onmessage = async (ev: MessageEvent<WorkerRequest>) => {
 
   const font = opentype.parse(req.fontBuffer);
   const scale = capHeightScale(font, req.params.letterHeight);
-  // Keep the original text index (including spaces) so the preview can
-  // match letters to their layout slots even when the text contains spaces.
-  const visibleChars: { ch: string; origIndex: number }[] = [];
-  Array.from(req.params.text).forEach((c, i) => {
-    if (!/\s/.test(c)) visibleChars.push({ ch: c, origIndex: i });
-  });
 
-  const letters: LetterMesh[] = [];
-  const layers: LetterLayers[] = [];
-  const errors: LetterError[] = [];
-
-  for (const { ch: char, origIndex } of visibleChars) {
-    const glyph = font.charToGlyph(char);
-    const rawContours = flattenGlyph(glyph, font.unitsPerEm, req.params.bezierTolerance);
-    const contours = rawContours.map(
+  // Build a contour map keyed by the *original text index* (skipping spaces).
+  const contoursByIndex = new Map<number, GlyphContours>();
+  Array.from(req.params.text).forEach((ch, i) => {
+    if (/\s/.test(ch)) return;
+    const glyph = font.charToGlyph(ch);
+    const raw = flattenGlyph(glyph, font.unitsPerEm, req.params.bezierTolerance);
+    const scaled = raw.map(
       (p) => p.map(([x, y]) => [x * scale, y * scale] as [number, number]),
     );
+    contoursByIndex.set(i, scaled);
+  });
+
+  const layout = layoutWord(font, req.params.text, req.params.letterHeight, req.params.letterOverlap);
+
+  const merged = await mergeIntoComponents(layout, contoursByIndex, {
+    letterOverlap: req.params.letterOverlap,
+    bridgeWidth: req.params.bridgeWidth,
+    bridgeHeight: req.params.bridgeHeight,
+    bridgeY: req.params.bridgeY,
+  });
+
+  const components: ComponentMesh[] = [];
+  const layers: ComponentLayers[] = [];
+  const errors: ComponentError[] = [];
+  const warnings: MergeWarning[] = merged.warnings;
+
+  for (const comp of merged.components) {
+    const memberRefs = comp.members.map((m) => ({ char: m.char, index: m.index }));
 
     const meshResult = await buildLetterShell({
-      contours,
+      contours: comp.mergedContours,
       totalDepth: req.params.totalDepth,
       backThickness: req.params.backThickness,
       wallThickness: req.params.wallThickness,
@@ -55,16 +71,14 @@ ctx.onmessage = async (ev: MessageEvent<WorkerRequest>) => {
     });
 
     if (!meshResult.ok) {
-      errors.push({ char, index: origIndex, reason: meshResult.reason });
+      errors.push({ members: memberRefs, reason: meshResult.reason });
       continue;
     }
 
     const centered = centerMeshXY(meshResult.mesh);
 
-    // Build the plexi mesh for this letter and shift it by the same
-    // (cx, cy) the shell got from centerMeshXY so it stays aligned.
     const plexiRaw = await buildLetterPlexi({
-      contours,
+      contours: comp.mergedContours,
       totalDepth: req.params.totalDepth,
       rabbetDepth: req.params.rabbetDepth,
       wallThickness: req.params.wallThickness,
@@ -84,32 +98,40 @@ ctx.onmessage = async (ev: MessageEvent<WorkerRequest>) => {
       plexi = { vertProperties: out, triVerts: plexiRaw.triVerts };
     }
 
-    letters.push({
-      char,
-      index: origIndex,
+    components.push({
+      members: memberRefs,
       vertProperties: centered.vertProperties,
       triVerts: centered.triVerts,
       bbox: centered.bbox,
+      // Word-space position is already encoded in the centered bbox; PreviewLetter
+      // reconstructs it via cx/cy, so xOffset must be 0 to avoid double-counting.
+      xOffset: 0,
       plexi,
     });
 
     const layerResult = await buildLetterLayers({
-      contours,
+      contours: comp.mergedContours,
       wallThickness: req.params.wallThickness,
       insetWidth: req.params.insetWidth,
     });
     if (layerResult) {
-      layers.push({ char, index: origIndex, ...layerResult });
+      layers.push({ members: memberRefs, ...layerResult });
     }
   }
 
-  const response: WorkerResponse = { requestId: req.requestId, letters, layers, errors };
+  const response: WorkerResponse = {
+    requestId: req.requestId,
+    components,
+    layers,
+    errors,
+    warnings,
+  };
 
   const transferables: Transferable[] = [];
-  for (const l of letters) {
-    transferables.push(l.vertProperties.buffer, l.triVerts.buffer);
-    if (l.plexi) {
-      transferables.push(l.plexi.vertProperties.buffer, l.plexi.triVerts.buffer);
+  for (const c of components) {
+    transferables.push(c.vertProperties.buffer, c.triVerts.buffer);
+    if (c.plexi) {
+      transferables.push(c.plexi.vertProperties.buffer, c.plexi.triVerts.buffer);
     }
   }
   ctx.postMessage(response, transferables);
