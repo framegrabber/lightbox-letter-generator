@@ -8,12 +8,10 @@ describe("buildReadme", () => {
       { ...DEFAULT_PARAMETERS, letterOverlap: 5, bridgeWidth: 12, bridgeHeight: 4, bridgeY: -50 },
       "https://example.com/?p=foo",
     );
-    expect(txt).toContain("Letter overlap:");
-    expect(txt).toContain("5");
-    expect(txt).toContain("Bridge width:");
-    expect(txt).toContain("12");
-    expect(txt).toContain("Bridge height:");
-    expect(txt).toContain("Bridge Y:");
+    expect(txt).toContain("Letter overlap:    5 mm");
+    expect(txt).toContain("Bridge width:      12 mm");
+    expect(txt).toContain("Bridge height:     4 mm");
+    expect(txt).toContain("Bridge Y:          -50 mm");
   });
 
   it("includes a Pieces section listing components when given them", () => {
@@ -33,5 +31,13 @@ describe("buildReadme", () => {
   it("omits Pieces section when no pieces given", () => {
     const txt = buildReadme(DEFAULT_PARAMETERS, "https://example.com/?p=foo");
     expect(txt).not.toContain("Pieces:");
+  });
+
+  it("uses singular 'letter' for a single-member component", () => {
+    const txt = buildReadme(DEFAULT_PARAMETERS, "https://example.com/?p=foo", [
+      { chars: "A", count: 1 },
+    ]);
+    expect(txt).toContain("1 letter)");
+    expect(txt).not.toContain("1 letters");
   });
 });
