@@ -6,8 +6,6 @@ import { useParameters } from "../state/parameters";
 import { useUI } from "../state/ui";
 import { usePreviewBuildContext } from "./usePreviewBuildContext";
 import { PreviewLetter } from "./PreviewLetter";
-import { layoutWord } from "../geometry/layout";
-import type { ComponentMesh } from "../geometry/worker-client";
 
 // Auto-fit defaults: where the focal point sits inside the bbox, the camera
 // distance multiplier, and the unit-vector direction from target to camera.
@@ -112,30 +110,10 @@ function CameraHUD({ hudRef }: { hudRef: React.RefObject<HTMLDivElement | null> 
 export function PreviewCanvas() {
   const params = useParameters();
   const showCameraHUD = useUI((s) => s.showCameraHUD);
-  const { result, busy, layoutFont } = usePreviewBuildContext();
+  const { result, busy } = usePreviewBuildContext();
   const [fitToken, setFitToken] = useState(0);
   const hudRef = useRef<HTMLDivElement | null>(null);
   const [copied, setCopied] = useState(false);
-
-  const positions = layoutFont
-    ? layoutWord(layoutFont, params.text, params.letterHeight, params.letterOverlap)
-    : [];
-  // Map a non-space original-text index to the component that owns it.
-  // While Task 3 is in flight every component has exactly one member; once the
-  // merge stage lands, multi-member components show up at the index of any one
-  // of their members. We render one mesh per *component*, keyed by the leftmost
-  // member's index, so we de-duplicate when multiple positions share a component.
-  const componentByIndex = new Map<number, ComponentMesh>();
-  if (result) {
-    for (const c of result.components) {
-      for (const m of c.members) componentByIndex.set(m.index, c);
-    }
-  }
-
-  const visibleCharIndices: number[] = [];
-  Array.from(params.text).forEach((c, i) => {
-    if (!/\s/.test(c)) visibleCharIndices.push(i);
-  });
 
   return (
     <div className="preview-canvas">
@@ -151,21 +129,9 @@ export function PreviewCanvas() {
         />
         <SceneSetup fitToken={fitToken} />
         {showCameraHUD && <CameraHUD hudRef={hudRef} />}
-        {(() => {
-          const renderedComponents = new Set<unknown>();
-          return positions.map((p, i) => {
-            const originalIndex = visibleCharIndices[i];
-            const component = componentByIndex.get(originalIndex);
-            if (!component) return null;
-            // Render each component once, at its leftmost member's xOffset.
-            if (renderedComponents.has(component)) return null;
-            renderedComponents.add(component);
-            const leftmost = component.members[0];
-            const leftmostPosIdx = visibleCharIndices.indexOf(leftmost.index);
-            const xOffset = leftmostPosIdx >= 0 ? positions[leftmostPosIdx].xOffset : p.xOffset;
-            return <PreviewLetter key={`${i}-${p.char}`} component={component} xOffset={xOffset} />;
-          });
-        })()}
+        {result?.components.map((c, i) => (
+          <PreviewLetter key={i} component={c} xOffset={c.xOffset} />
+        )) ?? null}
       </Canvas>
       <button
         className="preview-fit"

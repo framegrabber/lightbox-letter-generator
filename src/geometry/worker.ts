@@ -2,8 +2,11 @@
 import opentype from "opentype.js";
 import { flattenGlyph } from "./flatten";
 import { capHeightScale } from "./scale";
+import { layoutWord } from "./layout";
+import { mergeIntoComponents } from "./merge";
 import { buildLetterShell, buildLetterPlexi, centerMeshXY } from "./shell";
 import { buildLetterLayers } from "../exporters/svg";
+import type { GlyphContours } from "./types";
 import type { Parameters } from "../state/parameters";
 import type {
   ComponentMesh,
@@ -29,27 +32,37 @@ ctx.onmessage = async (ev: MessageEvent<WorkerRequest>) => {
   const font = opentype.parse(req.fontBuffer);
   const scale = capHeightScale(font, req.params.letterHeight);
 
-  const visibleChars: { ch: string; origIndex: number }[] = [];
-  Array.from(req.params.text).forEach((c, i) => {
-    if (!/\s/.test(c)) visibleChars.push({ ch: c, origIndex: i });
+  // Build a contour map keyed by the *original text index* (skipping spaces).
+  const contoursByIndex = new Map<number, GlyphContours>();
+  Array.from(req.params.text).forEach((ch, i) => {
+    if (/\s/.test(ch)) return;
+    const glyph = font.charToGlyph(ch);
+    const raw = flattenGlyph(glyph, font.unitsPerEm, req.params.bezierTolerance);
+    const scaled = raw.map(
+      (p) => p.map(([x, y]) => [x * scale, y * scale] as [number, number]),
+    );
+    contoursByIndex.set(i, scaled);
+  });
+
+  const layout = layoutWord(font, req.params.text, req.params.letterHeight, req.params.letterOverlap);
+
+  const merged = await mergeIntoComponents(layout, contoursByIndex, {
+    letterOverlap: req.params.letterOverlap,
+    bridgeWidth: req.params.bridgeWidth,
+    bridgeHeight: req.params.bridgeHeight,
+    bridgeY: req.params.bridgeY,
   });
 
   const components: ComponentMesh[] = [];
   const layers: ComponentLayers[] = [];
   const errors: ComponentError[] = [];
-  const warnings: MergeWarning[] = [];
+  const warnings: MergeWarning[] = merged.warnings;
 
-  for (const { ch: char, origIndex } of visibleChars) {
-    const glyph = font.charToGlyph(char);
-    const rawContours = flattenGlyph(glyph, font.unitsPerEm, req.params.bezierTolerance);
-    const contours = rawContours.map(
-      (p) => p.map(([x, y]) => [x * scale, y * scale] as [number, number]),
-    );
-
-    const member = { char, index: origIndex };
+  for (const comp of merged.components) {
+    const memberRefs = comp.members.map((m) => ({ char: m.char, index: m.index }));
 
     const meshResult = await buildLetterShell({
-      contours,
+      contours: comp.mergedContours,
       totalDepth: req.params.totalDepth,
       backThickness: req.params.backThickness,
       wallThickness: req.params.wallThickness,
@@ -58,14 +71,14 @@ ctx.onmessage = async (ev: MessageEvent<WorkerRequest>) => {
     });
 
     if (!meshResult.ok) {
-      errors.push({ members: [member], reason: meshResult.reason });
+      errors.push({ members: memberRefs, reason: meshResult.reason });
       continue;
     }
 
     const centered = centerMeshXY(meshResult.mesh);
 
     const plexiRaw = await buildLetterPlexi({
-      contours,
+      contours: comp.mergedContours,
       totalDepth: req.params.totalDepth,
       rabbetDepth: req.params.rabbetDepth,
       wallThickness: req.params.wallThickness,
@@ -86,21 +99,23 @@ ctx.onmessage = async (ev: MessageEvent<WorkerRequest>) => {
     }
 
     components.push({
-      members: [member],
+      members: memberRefs,
       vertProperties: centered.vertProperties,
       triVerts: centered.triVerts,
       bbox: centered.bbox,
-      xOffset: 0, // no word-space translation yet; layout positions are applied in PreviewLetter
+      // The component bbox in word space; preview combines this with the
+      // mesh's per-component centering shift.
+      xOffset: comp.bbox.minX,
       plexi,
     });
 
     const layerResult = await buildLetterLayers({
-      contours,
+      contours: comp.mergedContours,
       wallThickness: req.params.wallThickness,
       insetWidth: req.params.insetWidth,
     });
     if (layerResult) {
-      layers.push({ members: [member], ...layerResult });
+      layers.push({ members: memberRefs, ...layerResult });
     }
   }
 
