@@ -17,10 +17,20 @@ describe("parameters store", () => {
     expect(state.rabbetDepth).toBe(5);
     expect(state.insetWidth).toBe(5);
     expect(state.bezierTolerance).toBe(0.1);
+    expect(state.letterOverlap).toBe(0);
+    expect(state.bridgeWidth).toBe(0);
+    expect(state.bridgeHeight).toBe(0);
+    expect(state.bridgeY).toBe(-100); // -letterHeight / 2
   });
 
   it("updates a single field via set", () => {
     useParameters.getState().set({ text: "MAKING" });
     expect(useParameters.getState().text).toBe("MAKING");
+  });
+
+  it("updates connected-letters fields via set", () => {
+    useParameters.getState().set({ letterOverlap: 5, bridgeWidth: 10 });
+    expect(useParameters.getState().letterOverlap).toBe(5);
+    expect(useParameters.getState().bridgeWidth).toBe(10);
   });
 });

@@ -8,14 +8,32 @@ type Serializable = Omit<Parameters, "fontSource"> & {
   fontSource: { kind: "bundled"; id: string } | { kind: "uploaded"; name: string; sha256: string };
 };
 
-// Translate any deprecated field names from older saves into current shape.
-function migrate(raw: Record<string, unknown>): Partial<Parameters> {
+// Translate any deprecated field names from older saves into current shape and
+// fill in defaults for fields that didn't exist in older saves.
+export function migrate(raw: Record<string, unknown>): Partial<Parameters> {
   const out: Record<string, unknown> = { ...raw };
+
+  // Legacy rabbetLipWidth → insetWidth.
   if (typeof out.rabbetLipWidth === "number" && typeof out.wallThickness === "number") {
-    // Old name = lip width from outer; new name = shelf width.
     out.insetWidth = out.wallThickness - out.rabbetLipWidth;
   }
   delete out.rabbetLipWidth;
+
+  // Connected-letters fields added later: fill defaults if missing.
+  if (typeof out.letterOverlap !== "number") {
+    out.letterOverlap = DEFAULT_PARAMETERS.letterOverlap;
+  }
+  if (typeof out.bridgeWidth !== "number") {
+    out.bridgeWidth = DEFAULT_PARAMETERS.bridgeWidth;
+  }
+  if (typeof out.bridgeHeight !== "number") {
+    out.bridgeHeight = DEFAULT_PARAMETERS.bridgeHeight;
+  }
+  if (typeof out.bridgeY !== "number") {
+    const lh = typeof out.letterHeight === "number" ? out.letterHeight : DEFAULT_PARAMETERS.letterHeight;
+    out.bridgeY = -lh / 2;
+  }
+
   return out as Partial<Parameters>;
 }
 
@@ -53,6 +71,10 @@ export function initPersistence(): void {
       rabbetDepth: state.rabbetDepth,
       insetWidth: state.insetWidth,
       bezierTolerance: state.bezierTolerance,
+      letterOverlap: state.letterOverlap,
+      bridgeWidth: state.bridgeWidth,
+      bridgeHeight: state.bridgeHeight,
+      bridgeY: state.bridgeY,
     };
     const json = JSON.stringify(ser);
     try {
