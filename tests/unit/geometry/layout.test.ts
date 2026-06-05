@@ -31,3 +31,27 @@ describe("layoutWord", () => {
     expect(result[1].xOffset).toBeGreaterThan(result[0].xOffset);
   });
 });
+
+describe("layoutWord with letterOverlap", () => {
+  const font = loadFont();
+
+  it("reduces cursor advance for non-space pairs", () => {
+    const noOverlap = layoutWord(font, "AB", 100, 0);
+    const withOverlap = layoutWord(font, "AB", 100, 5);
+    expect(withOverlap[1].xOffset).toBeCloseTo(noOverlap[1].xOffset - 5, 5);
+  });
+
+  it("does not apply overlap across spaces", () => {
+    const result = layoutWord(font, "A B", 100, 5);
+    const noOverlap = layoutWord(font, "A B", 100, 0);
+    // Both glyphs are A and B; the space between them must not be tightened.
+    // The B in "A B" should land at the same xOffset as in the zero-overlap case.
+    expect(result[1].xOffset).toBeCloseTo(noOverlap[1].xOffset, 5);
+  });
+
+  it("defaults to zero overlap when arg is omitted", () => {
+    const a = layoutWord(font, "AB", 100);
+    const b = layoutWord(font, "AB", 100, 0);
+    expect(a[1].xOffset).toBe(b[1].xOffset);
+  });
+});
