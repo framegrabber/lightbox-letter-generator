@@ -45,7 +45,10 @@ test("end-to-end: connected mode merges letters into one STL", async ({ page }) 
   await page.getByLabel("Wall thickness").fill("3");
   await page.getByLabel("Inset width").fill("1.5");
   // Pull H and i together far enough that their outlines overlap.
-  // Inter "H" is ~50mm wide at 80mm tall; an overlap of ~30mm closes the gap.
+  // Anton (the bundled default font) at letterHeight=80 produces an "H"
+  // whose advance leaves enough gap that an overlap of 30mm reliably
+  // merges the two letters. If a future font change breaks this, bump
+  // the value (40, 50, ...) until the merge fires.
   await page.getByLabel("Letter overlap").fill("30");
 
   const button = page.getByRole("button", { name: /Download/ });
@@ -74,5 +77,6 @@ test("end-to-end: connected mode merges letters into one STL", async ({ page }) 
     const text = await readme.async("text");
     expect(text).toContain("Pieces:");
     expect(text).toContain("01_Hi");
+    expect(text).toContain("Letter overlap:");
   }
 });
