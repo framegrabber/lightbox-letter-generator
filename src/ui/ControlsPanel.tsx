@@ -107,6 +107,7 @@ export function ControlsPanel() {
           value={params.letterOverlap}
           onChange={(v) => params.set({ letterOverlap: v })}
           error={errorFor(errs, "letterOverlap")}
+          step={1}
         />
         <NumberField
           label="Bridge width"
@@ -114,6 +115,7 @@ export function ControlsPanel() {
           value={params.bridgeWidth}
           onChange={(v) => params.set({ bridgeWidth: v })}
           error={errorFor(errs, "bridgeWidth")}
+          step={1}
         />
         <NumberField
           label="Bridge height"
@@ -121,6 +123,7 @@ export function ControlsPanel() {
           value={params.bridgeHeight}
           onChange={(v) => params.set({ bridgeHeight: v })}
           error={errorFor(errs, "bridgeHeight")}
+          step={1}
         />
         <NumberField
           label="Bridge Y"
@@ -128,6 +131,7 @@ export function ControlsPanel() {
           value={params.bridgeY}
           onChange={(v) => params.set({ bridgeY: v })}
           error={errorFor(errs, "bridgeY")}
+          step={1}
         />
       </fieldset>
 
