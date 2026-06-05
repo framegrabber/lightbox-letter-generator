@@ -16,7 +16,7 @@ export type Component = {
 
 export type MergeWarning = {
   kind: "bridge_disconnected";
-  pair: [{ char: string; index: number }, { char: string; index: number }];
+  pair: [ComponentMember, ComponentMember];
 };
 
 export type MergeParams = {
@@ -87,15 +87,13 @@ export async function mergeIntoComponents(
   // layoutWord. The merge step does not re-apply overlap; it consumes positions
   // as given.
   const letters: LetterItem[] = [];
-  let layoutIndex = 0;
   for (const entry of layout) {
-    const contours = glyphContours.get(layoutIndex) ?? glyphContours.get(letters.length);
-    layoutIndex++;
+    const contours = glyphContours.get(entry.originalIndex);
     if (!contours || contours.length === 0) continue;
     const translated = translateContours(contours, entry.xOffset, 0);
     letters.push({
       kind: "letter",
-      member: { char: entry.char, index: letters.length, xOffset: entry.xOffset },
+      member: { char: entry.char, index: entry.originalIndex, xOffset: entry.xOffset },
       contours: translated,
       bbox: bboxOfContours(translated),
     });
@@ -131,10 +129,7 @@ export async function mergeIntoComponents(
       if (!touchesA || !touchesB) {
         warnings.push({
           kind: "bridge_disconnected",
-          pair: [
-            { char: a.member.char, index: a.member.index },
-            { char: b.member.char, index: b.member.index },
-          ],
+          pair: [a.member, b.member],
         });
         continue;
       }

@@ -5,6 +5,7 @@ export type LayoutEntry = {
   char: string;
   glyph: opentype.Glyph;
   xOffset: number; // mm, position of glyph origin in word space
+  originalIndex: number; // index into Array.from(text), including spaces
 };
 
 export function layoutWord(
@@ -27,7 +28,7 @@ export function layoutWord(
     const isSpace = /\s/.test(ch);
 
     if (!isSpace) {
-      entries.push({ char: ch, glyph, xOffset: cursorFu * scale });
+      entries.push({ char: ch, glyph, xOffset: cursorFu * scale, originalIndex: i });
     }
 
     cursorFu += glyph.advanceWidth ?? 0;

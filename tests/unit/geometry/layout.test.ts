@@ -55,3 +55,14 @@ describe("layoutWord with letterOverlap", () => {
     expect(a[1].xOffset).toBe(b[1].xOffset);
   });
 });
+
+describe("layoutWord originalIndex", () => {
+  const font = loadFont();
+
+  it("carries the original text index for non-space glyphs", () => {
+    const result = layoutWord(font, "A B", 100, 0);
+    expect(result.length).toBe(2);
+    expect(result[0].originalIndex).toBe(0);
+    expect(result[1].originalIndex).toBe(2); // space at index 1 is skipped
+  });
+});
