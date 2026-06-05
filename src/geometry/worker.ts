@@ -103,9 +103,9 @@ ctx.onmessage = async (ev: MessageEvent<WorkerRequest>) => {
       vertProperties: centered.vertProperties,
       triVerts: centered.triVerts,
       bbox: centered.bbox,
-      // The component bbox in word space; preview combines this with the
-      // mesh's per-component centering shift.
-      xOffset: comp.bbox.minX,
+      // Word-space position is already encoded in the centered bbox; PreviewLetter
+      // reconstructs it via cx/cy, so xOffset must be 0 to avoid double-counting.
+      xOffset: 0,
       plexi,
     });
 
