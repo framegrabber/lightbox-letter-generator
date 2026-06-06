@@ -39,9 +39,9 @@ Added to `Parameters` in `src/state/parameters.ts`:
 | `letterOverlap` | number (mm) | `0` | `0 ≤ letterOverlap < letterHeight` |
 | `bridgeWidth` | number (mm) | `0` | `bridgeWidth ≥ 0` |
 | `bridgeHeight` | number (mm) | `0` | `bridgeHeight ≥ 0` |
-| `bridgeY` | number (mm) | `-letterHeight / 2` | unconstrained |
+| `bridgeY` | number (mm) | `+letterHeight / 2` | unconstrained |
 
-`bridgeY` is the Y position of the bar's center, in word space. After `flatten.ts`'s Y-flip, glyphs span `Y ∈ [-letterHeight, 0]` (baseline at Y=0, top at Y=-letterHeight), so the default places the bar at mid-letter. The default is computed once at parameter initialization; it does not auto-update when `letterHeight` changes — that would override an intentional user value.
+`bridgeY` is the Y position of the bar's center, in word space. After `flatten.ts`'s Y-flip, glyphs span `Y ∈ [0, +letterHeight]` (baseline at Y=0, cap-line at Y=+letterHeight), so the default places the bar at mid-letter. The default is computed once at parameter initialization; it does not auto-update when `letterHeight` changes — that would override an intentional user value.
 
 A bridge is added only when both `bridgeWidth > 0` and `bridgeHeight > 0`. If exactly one is zero, the bridge is silently disabled (no error, since the user is mid-edit).
 

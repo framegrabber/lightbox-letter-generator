@@ -20,7 +20,7 @@ describe("parameters store", () => {
     expect(state.letterOverlap).toBe(0);
     expect(state.bridgeWidth).toBe(0);
     expect(state.bridgeHeight).toBe(0);
-    expect(state.bridgeY).toBe(-100); // -letterHeight / 2
+    expect(state.bridgeY).toBe(100); // letterHeight / 2 (mid-letter; letters span Y=[0, letterHeight])
   });
 
   it("updates a single field via set", () => {

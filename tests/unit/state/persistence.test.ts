@@ -22,7 +22,7 @@ describe("persistence migrate", () => {
     expect(out.letterOverlap).toBe(0);
     expect(out.bridgeWidth).toBe(0);
     expect(out.bridgeHeight).toBe(0);
-    expect(out.bridgeY).toBe(-40); // -letterHeight / 2
+    expect(out.bridgeY).toBe(40); // letterHeight / 2
   });
 
   it("preserves existing connected-letters values", () => {
@@ -48,6 +48,6 @@ describe("persistence migrate", () => {
   it("falls back to bridgeY default when letterHeight is missing", () => {
     const out = migrate({});
     // No letterHeight, so we fall back to the default letterHeight.
-    expect(out.bridgeY).toBe(-100);
+    expect(out.bridgeY).toBe(100);
   });
 });

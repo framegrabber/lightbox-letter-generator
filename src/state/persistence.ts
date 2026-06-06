@@ -31,7 +31,7 @@ export function migrate(raw: Record<string, unknown>): Partial<Parameters> {
   }
   if (typeof out.bridgeY !== "number") {
     const lh = typeof out.letterHeight === "number" ? out.letterHeight : DEFAULT_PARAMETERS.letterHeight;
-    out.bridgeY = -lh / 2;
+    out.bridgeY = lh / 2;
   }
 
   return out as Partial<Parameters>;

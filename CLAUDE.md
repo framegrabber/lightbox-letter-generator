@@ -35,7 +35,7 @@ npm run lint     # ESLint flat config
 ## Coordinate system
 
 - Letters lay flat in the XY plane, extruded along **+Z**. Back face at `Z=0`, front at `Z=totalDepth`.
-- After `flatten.ts`'s Y-flip, the **letter top is at NEGATIVE Y** (opentype +Y up → our −Y up).
+- After `flatten.ts`'s Y-flip, **letters span Y ∈ [0, +letterHeight]** — baseline at Y=0, cap-line at Y=+letterHeight. Positive Y is up; the flip negates opentype's screen-down Y to give us a math-style coordinate system.
 - Outer contours emerge CCW, holes CW (via point-in-polygon parity correction in `flatten.ts`).
 - Camera is **Z-up** (`camera.up = (0, 0, 1)`). Auto-fit constants are at the top of `PreviewCanvas.tsx` (target fraction, dist multiplier, direction).
 
@@ -80,7 +80,7 @@ npm run lint     # ESLint flat config
 
 A bridge that doesn't actually touch both endpoints (e.g. `bridgeY` outside the letters' Y range) emits a `bridge_disconnected` warning and is dropped — the component split is unchanged.
 
-`bridgeY` defaults to `-letterHeight / 2` because letters span `Y ∈ [-letterHeight, 0]` after `flatten.ts`'s Y-flip. The default does not auto-update when `letterHeight` changes; an intentional user value is preserved.
+`bridgeY` defaults to `+letterHeight / 2` because letters span `Y ∈ [0, +letterHeight]` after `flatten.ts`'s Y-flip — baseline at Y=0, cap-line at Y=+letterHeight, mid-letter at Y=+letterHeight/2. The default does not auto-update when `letterHeight` changes; an intentional user value is preserved.
 
 ## `NumberField` behaviour
 

@@ -35,7 +35,7 @@ export const DEFAULT_PARAMETERS: Parameters = {
   letterOverlap: 0,
   bridgeWidth: 0,
   bridgeHeight: 0,
-  bridgeY: -DEFAULT_LETTER_HEIGHT / 2,
+  bridgeY: DEFAULT_LETTER_HEIGHT / 2,
 };
 
 type Store = Parameters & { set: (p: Partial<Parameters>) => void };
