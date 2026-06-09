@@ -18,13 +18,27 @@ test("end-to-end: type word, download zip", async ({ page }) => {
   const path = await download.path();
   expect(path).toBeTruthy();
 
+  // Filename starts with lightbox-Hi- and ends in .zip; the middle is the
+  // local-time ISO segment which we don't pin precisely.
+  expect(download.suggestedFilename()).toMatch(/^lightbox-Hi-\d{4}-\d{2}-\d{2}T\d{2}-\d{2}-\d{2}\.zip$/);
+
   const fs = await import("node:fs/promises");
   const buf = await fs.readFile(path!);
   const zip = await JSZip.loadAsync(buf);
-  expect(zip.file("stl/01_H.stl")).toBeTruthy();
-  expect(zip.file("stl/02_i.stl")).toBeTruthy();
-  expect(zip.file("plexi/01_H.svg")).toBeTruthy();
-  expect(zip.file("plexi/02_i.svg")).toBeTruthy();
+
+  // New layout: stl/chars, stl/plexi, svg.
+  expect(zip.file("stl/chars/01_H_char.stl")).toBeTruthy();
+  expect(zip.file("stl/chars/02_i_char.stl")).toBeTruthy();
+  expect(zip.file("stl/plexi/01_H_plexi.stl")).toBeTruthy();
+  expect(zip.file("stl/plexi/02_i_plexi.stl")).toBeTruthy();
+  expect(zip.file("svg/01_H_plexi.svg")).toBeTruthy();
+  expect(zip.file("svg/02_i_plexi.svg")).toBeTruthy();
+
+  // Old layout must not survive.
+  expect(zip.file("stl/01_H.stl")).toBeNull();
+  expect(zip.file("plexi/01_H.svg")).toBeNull();
+  expect(zip.file("manifest.json")).toBeNull();
+
   const readme = zip.file("README.txt");
   expect(readme).toBeTruthy();
   if (readme) {
@@ -32,9 +46,9 @@ test("end-to-end: type word, download zip", async ({ page }) => {
     expect(text).toContain("Reproduce");
     expect(text).toContain("?p=");
     expect(text).toContain("Hi");
-    expect(text).toContain("Letter overlap:");
+    expect(text).toContain("Plexi tolerance:");
+    expect(text).toContain("stl/chars/");
   }
-  expect(zip.file("manifest.json")).toBeNull();
 });
 
 test("end-to-end: connected mode merges letters into one STL", async ({ page }) => {
@@ -60,16 +74,19 @@ test("end-to-end: connected mode merges letters into one STL", async ({ page }) 
   const path = await download.path();
   expect(path).toBeTruthy();
 
+  expect(download.suggestedFilename()).toMatch(/^lightbox-Hi-\d{4}-\d{2}-\d{2}T\d{2}-\d{2}-\d{2}\.zip$/);
+
   const fs = await import("node:fs/promises");
   const buf = await fs.readFile(path!);
   const zip = await JSZip.loadAsync(buf);
 
-  // One merged STL named with both chars (letter order preserved).
-  expect(zip.file("stl/01_Hi.stl")).toBeTruthy();
-  expect(zip.file("plexi/01_Hi.svg")).toBeTruthy();
-  // No per-letter STLs.
-  expect(zip.file("stl/01_H.stl")).toBeNull();
-  expect(zip.file("stl/02_i.stl")).toBeNull();
+  // One merged shell + one merged plexi STL + one merged plexi SVG.
+  expect(zip.file("stl/chars/01_Hi_char.stl")).toBeTruthy();
+  expect(zip.file("stl/plexi/01_Hi_plexi.stl")).toBeTruthy();
+  expect(zip.file("svg/01_Hi_plexi.svg")).toBeTruthy();
+  // No per-letter files.
+  expect(zip.file("stl/chars/01_H_char.stl")).toBeNull();
+  expect(zip.file("stl/chars/02_i_char.stl")).toBeNull();
 
   const readme = zip.file("README.txt");
   expect(readme).toBeTruthy();
@@ -78,5 +95,6 @@ test("end-to-end: connected mode merges letters into one STL", async ({ page }) 
     expect(text).toContain("Pieces:");
     expect(text).toContain("01_Hi");
     expect(text).toContain("Letter overlap:");
+    expect(text).toContain("Plexi tolerance:");
   }
 });
