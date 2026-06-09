@@ -7,6 +7,7 @@ import { meshToBinarySTL } from "../exporters/stl";
 import { polygonsToSVG } from "../exporters/svg";
 import { bundleAll } from "../exporters/zip";
 import { buildReadme } from "../exporters/manifest";
+import { buildZipFilename } from "../exporters/filename";
 
 type Props = { disabled: boolean };
 
@@ -72,7 +73,7 @@ export function ExportButtons({ disabled }: Props) {
       }));
       const readme = buildReadme(params, buildReproduceUrl(params), pieces);
       const blob = await bundleAll(shells, plexiStls, plexiSvgs, readme);
-      saveAs(blob, `lightbox-${Date.now()}.zip`);
+      saveAs(blob, buildZipFilename(params.text, new Date()));
     } finally {
       setBusy(false);
     }
