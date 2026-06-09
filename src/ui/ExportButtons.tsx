@@ -60,13 +60,16 @@ export function ExportButtons({ disabled }: Props) {
           triVerts: c.plexi.triVerts,
         }),
       }));
-      const plexiSvgs = componentsWithPlexi
-        .map((c) => {
-          const chars = c.members.map((m) => m.char).join("");
-          const layer = layersByChars.get(chars);
-          return layer ? { chars, svg: polygonsToSVG(layer.plexi, { margin: 1 }) } : null;
-        })
-        .filter((e): e is { chars: string; svg: string } => e != null);
+      const plexiSvgs = componentsWithPlexi.map((c) => {
+        const chars = c.members.map((m) => m.char).join("");
+        const layer = layersByChars.get(chars);
+        // Invariant: a component with a non-null plexi mesh always has a
+        // matching layer entry — both gate on the same rabbetCut offset
+        // (lipWidth + plexiTolerance) and the same cavity check. If this
+        // ever fires, the worker contract has drifted.
+        if (!layer) throw new Error(`missing plexi layer for component '${chars}'`);
+        return { chars, svg: polygonsToSVG(layer.plexi, { margin: 1 }) };
+      });
       const pieces = result.components.map((c) => ({
         chars: c.members.map((m) => m.char).join(""),
         count: c.members.length,

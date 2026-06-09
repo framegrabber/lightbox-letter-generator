@@ -119,7 +119,7 @@ lightbox-<text>-<localIso>.zip
 ## Tests
 
 - 92 Vitest unit tests, mirrors the `src/` layout under `tests/unit/`.
-- `tests/e2e/smoke.spec.ts` exercises full type → download. It sets explicit params (text, height, wall thickness, inset) so it doesn't depend on the current defaults — when defaults change, the test still passes. It asserts the zip layout (`stl/`, `plexi/`, `README.txt`, no `manifest.json`).
+- `tests/e2e/smoke.spec.ts` exercises full type → download. It sets explicit params (text, height, wall thickness, inset) so it doesn't depend on the current defaults — when defaults change, the test still passes. It asserts the zip layout (`stl/chars/`, `stl/plexi/`, `svg/`, `README.txt`, no `manifest.json`).
 - Test fixture font: `tests/fixtures/fonts/Inter-Regular.ttf`.
 
 ## Deploy
@@ -139,6 +139,7 @@ lightbox-<text>-<localIso>.zip
 
 - Spec is current with code: `docs/superpowers/specs/2026-05-22-lightbox-letter-generator-design.md`.
 - Connected-letters feature spec: `docs/superpowers/specs/2026-06-05-connected-letters-design.md` (current with code).
+- Printable-plexi feature spec: `docs/superpowers/specs/2026-06-09-printable-plexi-design.md` (current with code).
 - Implementation plan in `docs/superpowers/plans/` is **historical** — frozen at v1, contains stale references (e.g. `rabbetLipWidth`). Treat as an artifact; don't update.
 
 ## Working with this code
