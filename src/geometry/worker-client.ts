@@ -71,6 +71,7 @@ export function build(params: Parameters, fontBuffer: ArrayBuffer): Promise<Buil
     bridgeWidth: params.bridgeWidth,
     bridgeHeight: params.bridgeHeight,
     bridgeY: params.bridgeY,
+    plexiTolerance: params.plexiTolerance,
   };
   return new Promise((resolve, reject) => {
     const handler = (ev: MessageEvent<WorkerResponse>) => {

@@ -81,7 +81,7 @@ export type PlexiInputs = {
   rabbetDepth: number;
   wallThickness: number;
   insetWidth: number;
-  plexiTolerance?: number;
+  plexiTolerance: number;
 };
 
 // Standalone mesh of just the plexi piece — same XY shape as the rabbet
@@ -94,9 +94,8 @@ export async function buildLetterPlexi(input: PlexiInputs): Promise<{ vertProper
   const { CrossSection } = m;
 
   const outer = new CrossSection(input.contours, "NonZero");
-  const tol = input.plexiTolerance ?? 0;
   const lipWidth = input.wallThickness - input.insetWidth;
-  const rabbetCut = outer.offset(-(lipWidth + tol), "Round");
+  const rabbetCut = outer.offset(-(lipWidth + input.plexiTolerance), "Round");
 
   if (rabbetCut.isEmpty()) {
     outer.delete();
