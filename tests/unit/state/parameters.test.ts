@@ -21,6 +21,7 @@ describe("parameters store", () => {
     expect(state.bridgeWidth).toBe(0);
     expect(state.bridgeHeight).toBe(0);
     expect(state.bridgeY).toBe(100); // letterHeight / 2 (mid-letter; letters span Y=[0, letterHeight])
+    expect(state.plexiTolerance).toBe(0.2);
   });
 
   it("updates a single field via set", () => {

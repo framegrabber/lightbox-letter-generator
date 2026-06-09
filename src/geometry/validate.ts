@@ -56,5 +56,18 @@ export function validate(p: Parameters): ValidationResult {
     errors.push({ field: "bridgeY", message: "Bridge Y must be a finite number" });
   }
 
+  if (!Number.isFinite(p.plexiTolerance) || p.plexiTolerance < 0) {
+    errors.push({ field: "plexiTolerance", message: "Plexi tolerance must be ≥ 0" });
+  } else if (
+    Number.isFinite(p.wallThickness) &&
+    Number.isFinite(p.insetWidth) &&
+    p.plexiTolerance >= p.wallThickness - p.insetWidth
+  ) {
+    errors.push({
+      field: "plexiTolerance",
+      message: "Plexi tolerance must be less than (wall thickness − inset width); larger collapses the insert",
+    });
+  }
+
   return errors.length === 0 ? { ok: true } : { ok: false, errors };
 }

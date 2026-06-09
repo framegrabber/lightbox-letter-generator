@@ -64,6 +64,7 @@ describe("connected-letters bounds", () => {
     bridgeWidth: 0,
     bridgeHeight: 0,
     bridgeY: -50,
+    plexiTolerance: 0.2,
   };
 
   it("accepts zero defaults", () => {
@@ -94,5 +95,50 @@ describe("connected-letters bounds", () => {
   it("rejects non-finite bridgeY", () => {
     const r = validate({ ...base, bridgeY: NaN });
     expect(r.ok).toBe(false);
+  });
+});
+
+describe("plexiTolerance bounds", () => {
+  const base = {
+    text: "ABC",
+    fontSource: { kind: "bundled" as const, id: "anton" },
+    letterHeight: 100,
+    wallThickness: 10,
+    totalDepth: 50,
+    backThickness: 2,
+    rabbetDepth: 5,
+    insetWidth: 5,
+    bezierTolerance: 0.1,
+    letterOverlap: 0,
+    bridgeWidth: 0,
+    bridgeHeight: 0,
+    bridgeY: 50,
+    plexiTolerance: 0.2,
+  };
+
+  it("accepts the default", () => {
+    expect(validate(base).ok).toBe(true);
+  });
+
+  it("accepts zero", () => {
+    expect(validate({ ...base, plexiTolerance: 0 }).ok).toBe(true);
+  });
+
+  it("rejects negative", () => {
+    expect(validate({ ...base, plexiTolerance: -0.1 }).ok).toBe(false);
+  });
+
+  it("rejects non-finite", () => {
+    expect(validate({ ...base, plexiTolerance: NaN }).ok).toBe(false);
+  });
+
+  it("rejects when >= (wallThickness − insetWidth)", () => {
+    // lipWidth = 10 − 5 = 5 → tolerance must be < 5
+    expect(validate({ ...base, plexiTolerance: 5 }).ok).toBe(false);
+    expect(validate({ ...base, plexiTolerance: 6 }).ok).toBe(false);
+  });
+
+  it("accepts a value just under the upper bound", () => {
+    expect(validate({ ...base, plexiTolerance: 4.9 }).ok).toBe(true);
   });
 });
