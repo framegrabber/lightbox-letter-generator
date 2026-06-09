@@ -61,6 +61,7 @@ export function validate(p: Parameters): ValidationResult {
   } else if (
     Number.isFinite(p.wallThickness) &&
     Number.isFinite(p.insetWidth) &&
+    p.insetWidth < p.wallThickness &&
     p.plexiTolerance >= p.wallThickness - p.insetWidth
   ) {
     errors.push({

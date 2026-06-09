@@ -67,4 +67,9 @@ describe("persistence migrate", () => {
     });
     expect(out.plexiTolerance).toBe(0.35);
   });
+
+  it("preserves plexiTolerance: 0 (falsy but valid)", () => {
+    const out = migrate({ letterHeight: 200, plexiTolerance: 0 });
+    expect(out.plexiTolerance).toBe(0);
+  });
 });
