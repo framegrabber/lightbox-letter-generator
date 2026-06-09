@@ -59,6 +59,7 @@ export type LayerInputs = {
   contours: GlyphContours;
   wallThickness: number;
   insetWidth: number; // shelf width; lip = wallThickness − insetWidth
+  plexiTolerance: number;
 };
 
 export async function buildLetterLayers(input: LayerInputs): Promise<LetterLayers | null> {
@@ -68,7 +69,7 @@ export async function buildLetterLayers(input: LayerInputs): Promise<LetterLayer
   const outer = new CrossSection(input.contours, "NonZero");
   const cavity = outer.offset(-input.wallThickness, "Round");
   const lipWidth = input.wallThickness - input.insetWidth;
-  const rabbetCut = outer.offset(-lipWidth, "Round");
+  const rabbetCut = outer.offset(-(lipWidth + input.plexiTolerance), "Round");
 
   if (cavity.isEmpty() || rabbetCut.isEmpty()) {
     outer.delete();

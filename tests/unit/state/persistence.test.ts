@@ -50,4 +50,26 @@ describe("persistence migrate", () => {
     // No letterHeight, so we fall back to the default letterHeight.
     expect(out.bridgeY).toBe(100);
   });
+
+  it("fills plexiTolerance default when missing", () => {
+    const out = migrate({
+      letterHeight: 200,
+      wallThickness: 10,
+      insetWidth: 5,
+    });
+    expect(out.plexiTolerance).toBe(0.2);
+  });
+
+  it("preserves an existing plexiTolerance value", () => {
+    const out = migrate({
+      letterHeight: 200,
+      plexiTolerance: 0.35,
+    });
+    expect(out.plexiTolerance).toBe(0.35);
+  });
+
+  it("preserves plexiTolerance: 0 (falsy but valid)", () => {
+    const out = migrate({ letterHeight: 200, plexiTolerance: 0 });
+    expect(out.plexiTolerance).toBe(0);
+  });
 });

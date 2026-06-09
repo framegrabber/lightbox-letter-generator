@@ -83,6 +83,7 @@ ctx.onmessage = async (ev: MessageEvent<WorkerRequest>) => {
       rabbetDepth: req.params.rabbetDepth,
       wallThickness: req.params.wallThickness,
       insetWidth: req.params.insetWidth,
+      plexiTolerance: req.params.plexiTolerance,
     });
     let plexi: { vertProperties: Float32Array; triVerts: Uint32Array } | null = null;
     if (plexiRaw) {
@@ -113,6 +114,7 @@ ctx.onmessage = async (ev: MessageEvent<WorkerRequest>) => {
       contours: comp.mergedContours,
       wallThickness: req.params.wallThickness,
       insetWidth: req.params.insetWidth,
+      plexiTolerance: req.params.plexiTolerance,
     });
     if (layerResult) {
       layers.push({ members: memberRefs, ...layerResult });

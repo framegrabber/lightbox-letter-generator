@@ -96,6 +96,14 @@ export function ControlsPanel() {
           onChange={(v) => params.set({ insetWidth: v })}
           error={errorFor(errs, "insetWidth")}
         />
+        <NumberField
+          label="Plexi tolerance"
+          unit="mm"
+          value={params.plexiTolerance}
+          onChange={(v) => params.set({ plexiTolerance: v })}
+          error={errorFor(errs, "plexiTolerance")}
+          step={0.05}
+        />
         <PlexiToggle />
       </fieldset>
 

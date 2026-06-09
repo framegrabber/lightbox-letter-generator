@@ -40,4 +40,18 @@ describe("buildReadme", () => {
     expect(txt).toContain("1 letter)");
     expect(txt).not.toContain("1 letters");
   });
+
+  it("includes plexiTolerance and the new file-tree paths", () => {
+    const txt = buildReadme(
+      { ...DEFAULT_PARAMETERS, plexiTolerance: 0.25 },
+      "https://example.com/?p=foo",
+    );
+    expect(txt).toContain("Plexi tolerance:   0.25 mm");
+    expect(txt).toContain("stl/chars/");
+    expect(txt).toContain("stl/plexi/");
+    expect(txt).toContain("svg/");
+    // Old paths must not appear:
+    expect(txt).not.toContain("stl/NN_<chars>.stl");
+    expect(txt).not.toContain("plexi/NN_<chars>.svg");
+  });
 });

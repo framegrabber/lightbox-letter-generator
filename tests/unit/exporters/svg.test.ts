@@ -49,6 +49,7 @@ describe("buildLetterLayers", () => {
       contours: contoursFor("O"),
       wallThickness: 5,
       insetWidth: 3, // shelf width; lip = wall − inset = 2mm
+      plexiTolerance: 0,
     });
     expect(layers).not.toBeNull();
     if (!layers) return;
@@ -56,5 +57,30 @@ describe("buildLetterLayers", () => {
     expect(layers.wall.length).toBeGreaterThan(0);
     expect(layers.rabbet.length).toBeGreaterThan(0);
     expect(layers.plexi.length).toBeGreaterThan(0);
+  }, 30_000);
+
+  it("plexiTolerance>0 produces a smaller plexi polygon than tolerance=0", async () => {
+    const base = { contours: contoursFor("O"), wallThickness: 5, insetWidth: 3 };
+
+    const noTol = await buildLetterLayers({ ...base, plexiTolerance: 0 });
+    const withTol = await buildLetterLayers({ ...base, plexiTolerance: 0.4 });
+
+    expect(noTol).not.toBeNull();
+    expect(withTol).not.toBeNull();
+    if (!noTol || !withTol) return;
+
+    function bboxX(polys: [number, number][][]) {
+      let minX = Infinity, maxX = -Infinity;
+      for (const p of polys) for (const [x] of p) {
+        if (x < minX) minX = x;
+        if (x > maxX) maxX = x;
+      }
+      return { minX, maxX, w: maxX - minX };
+    }
+
+    const a = bboxX(noTol.plexi);
+    const b = bboxX(withTol.plexi);
+    expect(a.w - b.w).toBeGreaterThan(0.5);
+    expect(a.w - b.w).toBeLessThan(1.1);
   }, 30_000);
 });

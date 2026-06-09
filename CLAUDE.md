@@ -46,6 +46,7 @@ npm run lint     # ESLint flat config
 - Validation: `0 < insetWidth < wallThickness`. Equal collapses the lip; greater inverts the geometry (cavity hole then contains the rabbet hole and the rabbet contributes nothing).
 - Geometry: `rabbetCut = outer.offset(-(wallThickness − insetWidth), "Round")`.
 - Legacy URL/localStorage saves used `rabbetLipWidth`; `persistence.ts` `migrate()` translates them.
+- `plexiTolerance` (default 0.2 mm) shrinks the plexi geometry inward by that amount so a 3D-printed or laser-cut insert drops into the rabbet recess. The same tolerance applies to the STL mesh, the SVG cut sheet, and the preview render — one shape, one source of truth. Validation enforces `0 ≤ plexiTolerance < (wallThickness − insetWidth)`; values at or above the upper bound collapse the insert.
 
 ## Worker contract — `src/geometry/worker.ts` ↔ `src/geometry/worker-client.ts`
 
@@ -100,21 +101,25 @@ Local string state lets the user clear the input or type intermediate values lik
 ## Export format
 
 ```
-lightbox-<timestamp>.zip
+lightbox-<text>-<localIso>.zip
 ├── README.txt              # human-readable params + reproduce URL
-├── stl/01_<chars>.stl …    # 3D shells (one per connected component)
-└── plexi/01_<chars>.svg …  # plexi cut shapes only
+├── stl/
+│   ├── chars/01_<chars>_char.stl   # printable letter shells
+│   └── plexi/01_<chars>_plexi.stl  # printable plexi inserts
+└── svg/01_<chars>_plexi.svg         # laser-cut plexi sheets
 ```
 
-- One entry point: `bundleAll(stls, plexis, readme)`.
-- `buildReadme(params, reproduceUrl)` produces the README text. The reproduce URL is built from `window.location.origin + window.location.pathname + "?p=" + JSON.stringify(serializableParams)` in `ExportButtons`.
-- `<chars>` is the joined member chars per component (e.g. `BURGER` if all letters merge, `H`/`i` if they don't), sanitized to `[A-Za-z0-9_-]`. Empty/all-non-ASCII fallback is `componentNN`. The README's "Pieces" section enumerates the slots.
+- One entry point: `bundleAll(shells, plexiStls, plexiSvgs, readme)`.
+- Each component shares a slot index (1-based, zero-padded). `<chars>` is the joined member chars, sanitized to `[A-Za-z0-9_-]`; the per-file fallback is `componentNN`. Filenames carry a literal `_char` or `_plexi` suffix so a file moved out of its folder is still self-describing.
+- Components without a plexi (e.g. offset_collapsed) skip the `stl/plexi/` and `svg/` slots; the shell still ships under `stl/chars/`.
+- Zip filename: `lightbox-<sanitizedText>-<localIso>.zip` where `<localIso>` is `YYYY-MM-DDTHH-MM-SS` in the browser's local timezone. Built by `src/exporters/filename.ts`.
+- `buildReadme(params, reproduceUrl, pieces?)` produces the README text. The reproduce URL is built from `window.location.origin + window.location.pathname + "?p=" + JSON.stringify(serializableParams)` in `ExportButtons`.
 - The earlier four-layer SVG export (back/wall/rabbet/plexi) and `manifest.json` are GONE. Don't reintroduce them without an explicit ask.
 
 ## Tests
 
-- 69 Vitest unit tests, mirrors the `src/` layout under `tests/unit/`.
-- `tests/e2e/smoke.spec.ts` exercises full type → download. It sets explicit params (text, height, wall thickness, inset) so it doesn't depend on the current defaults — when defaults change, the test still passes. It asserts the zip layout (`stl/`, `plexi/`, `README.txt`, no `manifest.json`).
+- 92 Vitest unit tests, mirrors the `src/` layout under `tests/unit/`.
+- `tests/e2e/smoke.spec.ts` exercises full type → download. It sets explicit params (text, height, wall thickness, inset) so it doesn't depend on the current defaults — when defaults change, the test still passes. It asserts the zip layout (`stl/chars/`, `stl/plexi/`, `svg/`, `README.txt`, no `manifest.json`).
 - Test fixture font: `tests/fixtures/fonts/Inter-Regular.ttf`.
 
 ## Deploy
@@ -134,6 +139,7 @@ lightbox-<timestamp>.zip
 
 - Spec is current with code: `docs/superpowers/specs/2026-05-22-lightbox-letter-generator-design.md`.
 - Connected-letters feature spec: `docs/superpowers/specs/2026-06-05-connected-letters-design.md` (current with code).
+- Printable-plexi feature spec: `docs/superpowers/specs/2026-06-09-printable-plexi-design.md` (current with code).
 - Implementation plan in `docs/superpowers/plans/` is **historical** — frozen at v1, contains stale references (e.g. `rabbetLipWidth`). Treat as an artifact; don't update.
 
 ## Working with this code
