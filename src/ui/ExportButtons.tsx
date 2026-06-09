@@ -45,19 +45,27 @@ export function ExportButtons({ disabled }: Props) {
         chars: c.members.map((m) => m.char).join(""),
         stl: meshToBinarySTL({ vertProperties: c.vertProperties, triVerts: c.triVerts }),
       }));
-      const plexiStls = result.components
-        .filter((c): c is typeof c & { plexi: NonNullable<typeof c.plexi> } => c.plexi != null)
-        .map((c) => ({
-          chars: c.members.map((m) => m.char).join(""),
-          stl: meshToBinarySTL({
-            vertProperties: c.plexi.vertProperties,
-            triVerts: c.plexi.triVerts,
-          }),
-        }));
-      const plexiSvgs = result.layers.map((l) => ({
-        chars: l.members.map((m) => m.char).join(""),
-        svg: polygonsToSVG(l.plexi, { margin: 1 }),
+      const layersByChars = new Map(
+        result.layers.map((l) => [l.members.map((m) => m.char).join(""), l] as const),
+      );
+
+      const componentsWithPlexi = result.components.filter(
+        (c): c is typeof c & { plexi: NonNullable<typeof c.plexi> } => c.plexi != null,
+      );
+      const plexiStls = componentsWithPlexi.map((c) => ({
+        chars: c.members.map((m) => m.char).join(""),
+        stl: meshToBinarySTL({
+          vertProperties: c.plexi.vertProperties,
+          triVerts: c.plexi.triVerts,
+        }),
       }));
+      const plexiSvgs = componentsWithPlexi
+        .map((c) => {
+          const chars = c.members.map((m) => m.char).join("");
+          const layer = layersByChars.get(chars);
+          return layer ? { chars, svg: polygonsToSVG(layer.plexi, { margin: 1 }) } : null;
+        })
+        .filter((e): e is { chars: string; svg: string } => e != null);
       const pieces = result.components.map((c) => ({
         chars: c.members.map((m) => m.char).join(""),
         count: c.members.length,

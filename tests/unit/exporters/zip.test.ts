@@ -80,6 +80,9 @@ describe("bundleAll", () => {
     expect(zip.file("stl/chars/02_B_char.stl")).toBeTruthy();
     expect(zip.file("stl/plexi/01_B_plexi.stl")).toBeTruthy();
     // No 02_A or 02_B with index mismatch — plexi list is independent slot order.
+    // Negative assertions: verify no off-by-one slot mismatch.
+    expect(zip.file("stl/plexi/02_B_plexi.stl")).toBeNull();
+    expect(zip.file("stl/plexi/01_A_plexi.stl")).toBeNull();
   });
 
   it("falls back to component<slot> for non-alphanumeric chars", async () => {
