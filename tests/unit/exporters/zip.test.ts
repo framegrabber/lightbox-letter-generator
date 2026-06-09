@@ -3,8 +3,45 @@ import JSZip from "jszip";
 import { bundleAll } from "../../../src/exporters/zip";
 
 describe("bundleAll", () => {
-  it("packages stls under stl/ and plexis under plexi/, plus README at root", async () => {
+  it("places shells under stl/chars/ with _char suffix", async () => {
     const blob = await bundleAll(
+      [{ chars: "BURGER", stl: new ArrayBuffer(84) }],
+      [],
+      [],
+      "readme",
+    );
+    const zip = await JSZip.loadAsync(blob);
+    expect(zip.file("stl/chars/01_BURGER_char.stl")).toBeTruthy();
+  });
+
+  it("places plexi STLs under stl/plexi/ with _plexi suffix", async () => {
+    const blob = await bundleAll(
+      [{ chars: "BURGER", stl: new ArrayBuffer(84) }],
+      [{ chars: "BURGER", stl: new ArrayBuffer(84) }],
+      [],
+      "readme",
+    );
+    const zip = await JSZip.loadAsync(blob);
+    expect(zip.file("stl/plexi/01_BURGER_plexi.stl")).toBeTruthy();
+  });
+
+  it("places plexi SVGs under svg/ with _plexi suffix", async () => {
+    const blob = await bundleAll(
+      [{ chars: "BURGER", stl: new ArrayBuffer(84) }],
+      [],
+      [{ chars: "BURGER", svg: "<svg/>" }],
+      "readme",
+    );
+    const zip = await JSZip.loadAsync(blob);
+    expect(zip.file("svg/01_BURGER_plexi.svg")).toBeTruthy();
+  });
+
+  it("packs a full multi-component export", async () => {
+    const blob = await bundleAll(
+      [
+        { chars: "M", stl: new ArrayBuffer(84) },
+        { chars: "i", stl: new ArrayBuffer(84) },
+      ],
       [
         { chars: "M", stl: new ArrayBuffer(84) },
         { chars: "i", stl: new ArrayBuffer(84) },
@@ -16,55 +53,78 @@ describe("bundleAll", () => {
       "readme",
     );
     const zip = await JSZip.loadAsync(blob);
-    expect(zip.file("stl/01_M.stl")).toBeTruthy();
-    expect(zip.file("stl/02_i.stl")).toBeTruthy();
-    expect(zip.file("plexi/01_M.svg")).toBeTruthy();
-    expect(zip.file("plexi/02_i.svg")).toBeTruthy();
+    expect(zip.file("stl/chars/01_M_char.stl")).toBeTruthy();
+    expect(zip.file("stl/chars/02_i_char.stl")).toBeTruthy();
+    expect(zip.file("stl/plexi/01_M_plexi.stl")).toBeTruthy();
+    expect(zip.file("stl/plexi/02_i_plexi.stl")).toBeTruthy();
+    expect(zip.file("svg/01_M_plexi.svg")).toBeTruthy();
+    expect(zip.file("svg/02_i_plexi.svg")).toBeTruthy();
     expect(zip.file("README.txt")).toBeTruthy();
-    expect(zip.file("manifest.json")).toBeNull();
   });
 
-  it("uses joined member chars for connected components", async () => {
+  it("a component without plexi still ships a shell, but no plexi files", async () => {
     const blob = await bundleAll(
-      [{ chars: "BURGER", stl: new ArrayBuffer(84) }],
-      [{ chars: "BURGER", svg: "<svg/>" }],
+      [
+        { chars: "A", stl: new ArrayBuffer(84) },
+        { chars: "B", stl: new ArrayBuffer(84) },
+      ],
+      [
+        // No plexi for A; only B.
+        { chars: "B", stl: new ArrayBuffer(84) },
+      ],
+      [],
       "readme",
     );
     const zip = await JSZip.loadAsync(blob);
-    expect(zip.file("stl/01_BURGER.stl")).toBeTruthy();
-    expect(zip.file("plexi/01_BURGER.svg")).toBeTruthy();
+    expect(zip.file("stl/chars/01_A_char.stl")).toBeTruthy();
+    expect(zip.file("stl/chars/02_B_char.stl")).toBeTruthy();
+    expect(zip.file("stl/plexi/01_B_plexi.stl")).toBeTruthy();
+    // No 02_A or 02_B with index mismatch — plexi list is independent slot order.
   });
 
-  it("falls back to component<slot> when chars sanitize to empty", async () => {
+  it("falls back to component<slot> for non-alphanumeric chars", async () => {
     const blob = await bundleAll(
+      [{ chars: "?!", stl: new ArrayBuffer(84) }],
       [{ chars: "?!", stl: new ArrayBuffer(84) }],
       [{ chars: "?!", svg: "<svg/>" }],
       "readme",
     );
     const zip = await JSZip.loadAsync(blob);
-    expect(zip.file("stl/01_component1.stl")).toBeTruthy();
-    expect(zip.file("plexi/01_component1.svg")).toBeTruthy();
+    expect(zip.file("stl/chars/01_component1_char.stl")).toBeTruthy();
+    expect(zip.file("stl/plexi/01_component1_plexi.stl")).toBeTruthy();
+    expect(zip.file("svg/01_component1_plexi.svg")).toBeTruthy();
   });
 
   it("strips disallowed characters", async () => {
     const blob = await bundleAll(
       [{ chars: "Hi/?", stl: new ArrayBuffer(84) }],
       [],
+      [],
       "readme",
     );
     const zip = await JSZip.loadAsync(blob);
-    expect(zip.file("stl/01_Hi.stl")).toBeTruthy();
+    expect(zip.file("stl/chars/01_Hi_char.stl")).toBeTruthy();
   });
 
   it("README content lands at the root", async () => {
     const readme = "Reproduce: http://example.com/?p=...\nText: BURGER";
-    const blob = await bundleAll([], [], readme);
+    const blob = await bundleAll([], [], [], readme);
     const zip = await JSZip.loadAsync(blob);
     const f = zip.file("README.txt");
     expect(f).toBeTruthy();
-    if (f) {
-      const txt = await f.async("text");
-      expect(txt).toBe(readme);
-    }
+    if (f) expect(await f.async("text")).toBe(readme);
+  });
+
+  it("does not emit the old layout paths", async () => {
+    const blob = await bundleAll(
+      [{ chars: "M", stl: new ArrayBuffer(84) }],
+      [{ chars: "M", stl: new ArrayBuffer(84) }],
+      [{ chars: "M", svg: "<svg/>" }],
+      "readme",
+    );
+    const zip = await JSZip.loadAsync(blob);
+    expect(zip.file("stl/01_M.stl")).toBeNull();
+    expect(zip.file("plexi/01_M.svg")).toBeNull();
+    expect(zip.file("manifest.json")).toBeNull();
   });
 });

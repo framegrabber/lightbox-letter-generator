@@ -25,6 +25,7 @@ function buildReproduceUrl(params: Parameters): string {
     bridgeWidth: params.bridgeWidth,
     bridgeHeight: params.bridgeHeight,
     bridgeY: params.bridgeY,
+    plexiTolerance: params.plexiTolerance,
   };
   const url = new URL(window.location.origin + window.location.pathname);
   url.searchParams.set("p", JSON.stringify(serializable));
@@ -40,11 +41,20 @@ export function ExportButtons({ disabled }: Props) {
     if (!result || result.components.length === 0) return;
     setBusy(true);
     try {
-      const stls = result.components.map((c) => ({
+      const shells = result.components.map((c) => ({
         chars: c.members.map((m) => m.char).join(""),
         stl: meshToBinarySTL({ vertProperties: c.vertProperties, triVerts: c.triVerts }),
       }));
-      const plexis = result.layers.map((l) => ({
+      const plexiStls = result.components
+        .filter((c): c is typeof c & { plexi: NonNullable<typeof c.plexi> } => c.plexi != null)
+        .map((c) => ({
+          chars: c.members.map((m) => m.char).join(""),
+          stl: meshToBinarySTL({
+            vertProperties: c.plexi.vertProperties,
+            triVerts: c.plexi.triVerts,
+          }),
+        }));
+      const plexiSvgs = result.layers.map((l) => ({
         chars: l.members.map((m) => m.char).join(""),
         svg: polygonsToSVG(l.plexi, { margin: 1 }),
       }));
@@ -53,7 +63,7 @@ export function ExportButtons({ disabled }: Props) {
         count: c.members.length,
       }));
       const readme = buildReadme(params, buildReproduceUrl(params), pieces);
-      const blob = await bundleAll(stls, plexis, readme);
+      const blob = await bundleAll(shells, plexiStls, plexiSvgs, readme);
       saveAs(blob, `lightbox-${Date.now()}.zip`);
     } finally {
       setBusy(false);
