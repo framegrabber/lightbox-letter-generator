@@ -81,19 +81,22 @@ export type PlexiInputs = {
   rabbetDepth: number;
   wallThickness: number;
   insetWidth: number;
+  plexiTolerance?: number;
 };
 
 // Standalone mesh of just the plexi piece — same XY shape as the rabbet
-// cutout, extruded by rabbetDepth, positioned to sit flush in the recess.
-// Returns null if the rabbet cutout collapses for this glyph.
+// cutout, shrunk inward by `plexiTolerance` so the printed or cut insert
+// drops into the recess. Extruded by rabbetDepth, positioned to sit flush.
+// Returns null if the inset cutout collapses for this glyph.
 export async function buildLetterPlexi(input: PlexiInputs): Promise<{ vertProperties: Float32Array; triVerts: Uint32Array } | null> {
   if (input.contours.length === 0) return null;
   const m = await getManifold();
   const { CrossSection } = m;
 
   const outer = new CrossSection(input.contours, "NonZero");
+  const tol = input.plexiTolerance ?? 0;
   const lipWidth = input.wallThickness - input.insetWidth;
-  const rabbetCut = outer.offset(-lipWidth, "Round");
+  const rabbetCut = outer.offset(-(lipWidth + tol), "Round");
 
   if (rabbetCut.isEmpty()) {
     outer.delete();

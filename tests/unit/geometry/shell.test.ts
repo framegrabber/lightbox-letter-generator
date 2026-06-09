@@ -2,7 +2,7 @@ import { describe, it, expect } from "vitest";
 import { readFileSync } from "node:fs";
 import { resolve } from "node:path";
 import opentype from "opentype.js";
-import { buildLetterShell } from "../../../src/geometry/shell";
+import { buildLetterShell, buildLetterPlexi } from "../../../src/geometry/shell";
 import type { ShellInputs } from "../../../src/geometry/shell";
 import { flattenGlyph } from "../../../src/geometry/flatten";
 import { capHeightScale } from "../../../src/geometry/scale";
@@ -64,5 +64,46 @@ describe("buildLetterShell", () => {
       if (Math.abs(v[i] - expectedShelfZ) < 0.01) { found = true; break; }
     }
     expect(found).toBe(true);
+  }, 30_000);
+});
+
+describe("buildLetterPlexi tolerance", () => {
+  const buf = readFileSync(resolve(__dirname, "../../fixtures/fonts/Inter-Regular.ttf"));
+  const font = opentype.parse(buf.buffer.slice(buf.byteOffset, buf.byteOffset + buf.byteLength));
+
+  function contoursForLetter(ch: string) {
+    const scale = capHeightScale(font, 100);
+    const raw = flattenGlyph(font.charToGlyph(ch), font.unitsPerEm, 0.1);
+    return raw.map((p) => p.map(([x, y]) => [x * scale, y * scale] as [number, number]));
+  }
+
+  function meshBboxXY(mesh: { vertProperties: Float32Array; triVerts: Uint32Array }) {
+    let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
+    for (let i = 0; i < mesh.vertProperties.length; i += 3) {
+      const x = mesh.vertProperties[i];
+      const y = mesh.vertProperties[i + 1];
+      if (x < minX) minX = x; if (x > maxX) maxX = x;
+      if (y < minY) minY = y; if (y > maxY) maxY = y;
+    }
+    return { minX, minY, maxX, maxY };
+  }
+
+  it("plexiTolerance>0 produces a smaller mesh than tolerance=0", async () => {
+    const contours = contoursForLetter("M");
+    const base = { contours, totalDepth: 25, rabbetDepth: 3, wallThickness: 5, insetWidth: 3 };
+
+    const noTol = await buildLetterPlexi({ ...base, plexiTolerance: 0 });
+    const withTol = await buildLetterPlexi({ ...base, plexiTolerance: 0.4 });
+
+    expect(noTol).not.toBeNull();
+    expect(withTol).not.toBeNull();
+    if (!noTol || !withTol) return;
+
+    const a = meshBboxXY(noTol);
+    const b = meshBboxXY(withTol);
+    // With 0.4 mm shrink on each side, X width should be ≈ 0.8 mm smaller.
+    const widthDelta = (a.maxX - a.minX) - (b.maxX - b.minX);
+    expect(widthDelta).toBeGreaterThan(0.5);
+    expect(widthDelta).toBeLessThan(1.1);
   }, 30_000);
 });
