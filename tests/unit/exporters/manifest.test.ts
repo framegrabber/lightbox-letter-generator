@@ -62,4 +62,29 @@ describe("buildReadme", () => {
     );
     expect(txt).toContain("Back cavity depth: 35 mm");
   });
+
+  it("includes cable hole parameters in the parameter dump", () => {
+    const txt = buildReadme(
+      {
+        ...DEFAULT_PARAMETERS,
+        cableHoleDiameter: 8,
+        cableHoleY: 75,
+        cableHoleZ: 10,
+        cableHoleAtEnds: false,
+      },
+      "https://example.com/?p=foo",
+    );
+    expect(txt).toContain("Cable hole dia:    8 mm");
+    expect(txt).toContain("Cable hole Y:      75 mm");
+    expect(txt).toContain("Cable hole Z:      10 mm");
+    expect(txt).toContain("Cable hole ends:   no");
+  });
+
+  it("renders cable-hole-ends as 'yes' when true", () => {
+    const txt = buildReadme(
+      { ...DEFAULT_PARAMETERS, cableHoleAtEnds: true },
+      "https://example.com/?p=foo",
+    );
+    expect(txt).toContain("Cable hole ends:   yes");
+  });
 });
