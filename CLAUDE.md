@@ -89,6 +89,20 @@ A bridge that doesn't actually touch both endpoints (e.g. `bridgeY` outside the 
 
 The shell mesh's coordinate system shifts so Z=0 is at the open back (lowest face) and Z=`totalDepth + backCavityDepth` is at the front. Slicers print marquee letters open-side-down by default. `buildLetterPlexi`'s Z translation tracks the new top so the plexi mesh stays aligned with the front rabbet.
 
+## Cable holes
+
+`cableHoleDiameter`, `cableHoleY`, `cableHoleZ`, `cableHoleAtEnds` (in `state/parameters.ts`) drive the cable-hole drilling step. Default `cableHoleDiameter = 0` disables the feature; geometry is unchanged.
+
+`src/geometry/cable-holes.ts` is a pure helper: given the layout, the per-glyph contour map, and the parameters, it returns a list of horizontal cylinder specs in word space. Boundary cylinders sit between every adjacent non-space letter pair (same `b.index - a.index === 1` rule as bridges); power-entry cylinders sit at the leftmost letter's left edge and the rightmost letter's right edge when `cableHoleAtEnds = true`.
+
+Boundary cylinder length = `max(|gap| + 4·wallThickness, 4·wallThickness)` — enough margin to fully pierce both adjacent walls without normally reaching the opposite walls of those letters. Power-entry length = `4·wallThickness`. Very thin letters (narrow stems) may get pierced all the way through; that's acceptable for a cable channel.
+
+`worker.ts` calls `computeCableHoles` once per build and per-component filters by X-bbox overlap before passing the filtered list to `buildLetterShell`. For separate components, a single boundary cylinder gets passed to BOTH adjacent components (each carves its own wall). For merged components (overlap or bridges), the same cylinder gets passed to the single merged component (carves a tunnel through the joining material).
+
+`shell.ts`'s drill loop builds a Z-cylinder, rotates 90° around Y to align with X, translates to (x, y, z), and subtracts. Every intermediate Manifold is `.delete()`-ed inline.
+
+If a bridge sits at the same Y/Z as a cable hole, the cylinder pierces the bridge bar (cable runs through it). No special-casing.
+
 ## `NumberField` behaviour
 
 Local string state lets the user clear the input or type intermediate values like `"5."` without the controlled value snapping back. Commits to `onChange` whenever the text parses to a finite number; snaps back to the prop value only on blur if unparseable. Don't simplify back to a plain controlled input — that brought back "I can't clear the field to retype".
@@ -124,7 +138,7 @@ lightbox-<text>-<localIso>.zip
 
 ## Tests
 
-- 102 Vitest unit tests, mirrors the `src/` layout under `tests/unit/`.
+- 132 Vitest unit tests, mirrors the `src/` layout under `tests/unit/`.
 - `tests/e2e/smoke.spec.ts` exercises full type → download. It sets explicit params (text, height, wall thickness, inset) so it doesn't depend on the current defaults — when defaults change, the test still passes. It asserts the zip layout (`stl/chars/`, `stl/plexi/`, `svg/`, `README.txt`, no `manifest.json`).
 - Test fixture font: `tests/fixtures/fonts/Inter-Regular.ttf`.
 
@@ -147,6 +161,7 @@ lightbox-<text>-<localIso>.zip
 - Connected-letters feature spec: `docs/superpowers/specs/2026-06-05-connected-letters-design.md` (current with code).
 - Printable-plexi feature spec: `docs/superpowers/specs/2026-06-09-printable-plexi-design.md` (current with code).
 - Back-cavity feature spec: `docs/superpowers/specs/2026-06-10-back-cavity-design.md` (current with code).
+- Cable-holes feature spec: `docs/superpowers/specs/2026-06-10-cable-holes-design.md` (current with code).
 - Implementation plan in `docs/superpowers/plans/` is **historical** — frozen at v1, contains stale references (e.g. `rabbetLipWidth`). Treat as an artifact; don't update.
 
 ## Working with this code
