@@ -103,6 +103,20 @@ Boundary cylinder length = `max(|gap| + 4·wallThickness, 4·wallThickness)` —
 
 If a bridge sits at the same Y/Z as a cable hole, the cylinder pierces the bridge bar (cable runs through it). No special-casing.
 
+## Mounting
+
+`mountShankDiameter`, `mountSlotY`, `mountSlotXInset` (in `state/parameters.ts`) drive the keyhole-mount step. Default `mountShankDiameter = 0` disables the feature; geometry is unchanged. `headDiameter = 2 × shank` and `slotLength = 4 × shank` are derived in `mounts.ts` and never stored.
+
+`src/geometry/mounts.ts` is a pure helper: given a component bbox and mount params, it returns a `MountPlan` of two slots (one per side, at `bbox.minX + xInset` / `bbox.maxX − xInset`) and zero or two tabs. Tabs only emerge when `backCavityDepth > 0`; their Z range is `[max(0, backCavityDepth − backThickness), backCavityDepth]` (clamped at 0 for very small back cavities so the tab never protrudes past the open back).
+
+`worker.ts` calls `computeMounts` per component using the merged-component bbox. For separate components, each gets its own pair of slots (and tabs). For merged components (overlap or bridges), the merged bbox places slots near the outer edges of the joined piece.
+
+`shell.ts`'s mount block runs **after** cable-hole drilling: tabs are unioned in via `Manifold.cube` first, then keyholes (head cylinder via `Manifold.cylinder` + shank slot box via `Manifold.cube`, unioned together) are subtracted. The block runs through one Z range — `[0, backThickness]` for flat-back, `[max(0, backCavityDepth − backThickness), backCavityDepth]` for open-back — so the partition stays solid above the keyhole in open-back mode.
+
+Slot orientation: round head opening at the BOTTOM, narrow shank slot extending UPWARD. `mountSlotY` is the Y of the screw's resting position (= top of the slot). The user marks the wall and drills the screws at letter-coord Y = `mountSlotY`.
+
+The tab attaches to the partition's bottom face (Z = `backCavityDepth`) and is sized just to bracket the keyhole shape with 2 mm margin on each side. It does not extend to the perimeter wall — the partition spans the full outer outline at any (X, Y) inside the letter, so the tab fuses with the partition wherever the slot sits inside material.
+
 ## `NumberField` behaviour
 
 Local string state lets the user clear the input or type intermediate values like `"5."` without the controlled value snapping back. Commits to `onChange` whenever the text parses to a finite number; snaps back to the prop value only on blur if unparseable. Don't simplify back to a plain controlled input — that brought back "I can't clear the field to retype".
@@ -138,7 +152,7 @@ lightbox-<text>-<localIso>.zip
 
 ## Tests
 
-- 132 Vitest unit tests, mirrors the `src/` layout under `tests/unit/`.
+- 167 Vitest unit tests, mirrors the `src/` layout under `tests/unit/`.
 - `tests/e2e/smoke.spec.ts` exercises full type → download. It sets explicit params (text, height, wall thickness, inset) so it doesn't depend on the current defaults — when defaults change, the test still passes. It asserts the zip layout (`stl/chars/`, `stl/plexi/`, `svg/`, `README.txt`, no `manifest.json`).
 - Test fixture font: `tests/fixtures/fonts/Inter-Regular.ttf`.
 
@@ -162,6 +176,7 @@ lightbox-<text>-<localIso>.zip
 - Printable-plexi feature spec: `docs/superpowers/specs/2026-06-09-printable-plexi-design.md` (current with code).
 - Back-cavity feature spec: `docs/superpowers/specs/2026-06-10-back-cavity-design.md` (current with code).
 - Cable-holes feature spec: `docs/superpowers/specs/2026-06-10-cable-holes-design.md` (current with code).
+- Mounting-features feature spec: `docs/superpowers/specs/2026-06-10-mounting-features-design.md` (current with code).
 - Implementation plan in `docs/superpowers/plans/` is **historical** — frozen at v1, contains stale references (e.g. `rabbetLipWidth`). Treat as an artifact; don't update.
 
 ## Working with this code
