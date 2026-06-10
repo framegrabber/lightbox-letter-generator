@@ -177,3 +177,90 @@ describe("buildLetterShell with backCavityDepth", () => {
     expect(foundPanelTop).toBe(true);
   }, 30_000);
 });
+
+describe("buildLetterShell with cableHoles", () => {
+  const buf = readFileSync(resolve(__dirname, "../../fixtures/fonts/Inter-Regular.ttf"));
+  const font = opentype.parse(buf.buffer.slice(buf.byteOffset, buf.byteOffset + buf.byteLength));
+
+  function contoursForLetter(ch: string) {
+    const scale = capHeightScale(font, 100);
+    const raw = flattenGlyph(font.charToGlyph(ch), font.unitsPerEm, 0.1);
+    return raw.map((p) => p.map(([x, y]) => [x * scale, y * scale] as [number, number]));
+  }
+
+  const baseInputs = {
+    totalDepth: 25,
+    backThickness: 2,
+    wallThickness: 5,
+    rabbetDepth: 3,
+    insetWidth: 3,
+    backCavityDepth: 20,
+  };
+
+  it("cableHoles=[] produces the same triangle count as omitting the option", async () => {
+    const contours = contoursForLetter("M");
+    const a = await buildLetterShell({ ...baseInputs, contours });
+    const b = await buildLetterShell({ ...baseInputs, contours, cableHoles: [] });
+    expect(a.ok && b.ok).toBe(true);
+    if (!a.ok || !b.ok) return;
+    expect(a.mesh.triVerts.length).toBe(b.mesh.triVerts.length);
+  }, 30_000);
+
+  it("a cableHole intersecting the shell adds geometry (more triangles)", async () => {
+    const contours = contoursForLetter("M");
+    const noHole = await buildLetterShell({ ...baseInputs, contours });
+    expect(noHole.ok).toBe(true);
+    if (!noHole.ok) return;
+    // Find the shell's X bbox so we can place a hole well inside it.
+    let minX = Infinity, maxX = -Infinity;
+    for (let i = 0; i < noHole.mesh.vertProperties.length; i += 3) {
+      const x = noHole.mesh.vertProperties[i];
+      if (x < minX) minX = x;
+      if (x > maxX) maxX = x;
+    }
+    const midX = (minX + maxX) / 2;
+
+    const withHole = await buildLetterShell({
+      ...baseInputs,
+      contours,
+      cableHoles: [{ x: midX, y: 50, z: 10, diameter: 8, length: 200 }],
+    });
+    expect(withHole.ok).toBe(true);
+    if (!withHole.ok) return;
+    expect(withHole.mesh.triVerts.length).toBeGreaterThan(noHole.mesh.triVerts.length);
+  }, 30_000);
+
+  it("a cableHole far outside the shell's X bbox is a no-op", async () => {
+    const contours = contoursForLetter("M");
+    const noHole = await buildLetterShell({ ...baseInputs, contours });
+    expect(noHole.ok).toBe(true);
+    if (!noHole.ok) return;
+
+    const farAway = await buildLetterShell({
+      ...baseInputs,
+      contours,
+      // Hole centered far from any 'M' geometry; cylinder length is small enough
+      // to not reach the shell.
+      cableHoles: [{ x: 10000, y: 50, z: 10, diameter: 8, length: 20 }],
+    });
+    expect(farAway.ok).toBe(true);
+    if (!farAway.ok) return;
+    expect(farAway.mesh.triVerts.length).toBe(noHole.mesh.triVerts.length);
+  }, 30_000);
+
+  it("a cableHole with diameter <= 0 is skipped", async () => {
+    const contours = contoursForLetter("M");
+    const noHole = await buildLetterShell({ ...baseInputs, contours });
+    expect(noHole.ok).toBe(true);
+    if (!noHole.ok) return;
+
+    const zeroDia = await buildLetterShell({
+      ...baseInputs,
+      contours,
+      cableHoles: [{ x: 0, y: 50, z: 10, diameter: 0, length: 50 }],
+    });
+    expect(zeroDia.ok).toBe(true);
+    if (!zeroDia.ok) return;
+    expect(zeroDia.mesh.triVerts.length).toBe(noHole.mesh.triVerts.length);
+  }, 30_000);
+});

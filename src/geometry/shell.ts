@@ -9,6 +9,13 @@ export type ShellInputs = {
   rabbetDepth: number;
   insetWidth: number; // shelf width where the plexi rests; lip = wallThickness − insetWidth
   backCavityDepth: number; // hollow cavity behind the back panel; 0 = today's flat-back behavior
+  cableHoles?: ReadonlyArray<{
+    x: number;
+    y: number;
+    z: number;
+    diameter: number;
+    length: number;
+  }>;
 };
 
 export type ShellMeshResult =
@@ -63,7 +70,7 @@ export async function buildLetterShell(input: ShellInputs): Promise<ShellMeshRes
   shellMinusFrontCavity.delete();
 
   // Conditional rear cavity (skip the allocation entirely when backCavityDepth = 0).
-  let shell;
+  let shell: typeof shellNoRear;
   if (input.backCavityDepth > 0) {
     const rearCavityPrism = cavity.extrude(input.backCavityDepth);
     shell = shellNoRear.subtract(rearCavityPrism);
@@ -71,6 +78,26 @@ export async function buildLetterShell(input: ShellInputs): Promise<ShellMeshRes
     rearCavityPrism.delete();
   } else {
     shell = shellNoRear;
+  }
+
+  if (input.cableHoles && input.cableHoles.length > 0) {
+    const { Manifold } = m;
+    for (const hole of input.cableHoles) {
+      if (hole.diameter <= 0) continue;
+      // Z-cylinder centered at origin: length high, radius = diameter/2,
+      // both end-caps with the same radius, default circular segments,
+      // centered=true so it spans -length/2 to +length/2 along Z.
+      const cyl = Manifold.cylinder(hole.length, hole.diameter / 2, hole.diameter / 2, undefined, true);
+      // Rotate 90° around Y axis to align the cylinder axis with the X axis.
+      const cylX = cyl.rotate([0, 90, 0]);
+      const cylPositioned = cylX.translate([hole.x, hole.y, hole.z]);
+      const newShell = shell.subtract(cylPositioned);
+      cyl.delete();
+      cylX.delete();
+      cylPositioned.delete();
+      shell.delete();
+      shell = newShell;
+    }
   }
 
   const mesh = shell.getMesh();
