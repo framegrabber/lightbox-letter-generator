@@ -168,6 +168,7 @@ lightbox-<text>-<localIso>.zip
 - opentype.js's variable-font handling is unreliable for some files. Prefer static Regular weights when bundling.
 - ESLint flat config (`eslint.config.js`) — not legacy `.eslintrc`. The `lint` script just calls `eslint src` and lets the flat config's `files:` glob do the scoping.
 - `verbatimModuleSyntax` is on, so type-only imports must use `import type { ... }`. Mixed default/type imports are common (`import opentype from "opentype.js"` for the namespace; type access like `opentype.Font` is type-only and fine).
+- Mount tabs are not clipped against the letter outline. With narrow letters or large `mountSlotXInset`, a tab can extend past the outline (overhang in the rear cavity) or float entirely if the slot center sits outside the bbox at the slot Y. The preview shows it; trust-the-user policy applies. Reduce inset or pick wider letters.
 
 ## Spec / plan
 
