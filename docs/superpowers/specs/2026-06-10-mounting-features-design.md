@@ -37,8 +37,8 @@ Disabled by default (`mountShankDiameter = 0`). With the feature on:
 - For flat-back letters, the keyhole goes through the back panel (Z range `[0, backThickness]`).
 - For open-back letters, the keyhole is cut through a **tab** at the very rear of the letter (Z range `[0, backThickness]`). The tab fuses with the perimeter wall at `mountSlotY` by stretching in X from the slice edge to past the slot. The partition further forward stays solid; the front cavity is untouched.
 - Slot X positions are derived from `xExtentAtY(mergedContours, mountSlotY)` — the X-extent of letter material at the slot's Y, not the bbox. Tapering letters (V, A) at high Y get slots on the actual wall positions.
-- The keyhole has **two stages**: a through-hole (full panel depth) shaped like a stadium-with-bulb (head circle at bottom, narrow slot, small rounded top circle), and an **interior-face pocket** recessed half the panel depth (`backThickness × 0.5`) on the letter-interior side (high-Z), wider by `mountShankDiameter` on each side. The pocket gives the screw head clearance after it has passed through the through-hole and a clean visual finish.
-- After install, the screw shank rides through the keyhole's narrow slot; the screw head sits in the pocket recess on the letter-interior side (rear cavity for open-back, front cavity for flat-back), captured behind the through-hole's narrow portion.
+- The keyhole is a single through-hole shaped like a stadium-with-bulb (head circle at bottom, narrow slot, small rounded top circle) cut at Z ∈ `[0, backThickness]`. No back-side pocket — earlier versions added one but it ate too much material on a typical 2 mm panel without enough mechanical benefit.
+- After install, the screw shank rides through the keyhole's narrow slot and the head is captured behind the through-hole's narrow portion (in the rear cavity for open-back, in the front cavity for flat-back).
 
 For "BAR" with `letterOverlap = 0` (3 components), the user gets 6 keyholes. For a merged "BAR" component (overlap or bridges), the user gets 2 keyholes spanning the full merged piece — slots near the outer edges of B and R, ideal for a long sign.
 
@@ -147,61 +147,33 @@ if (input.mounts && (input.mounts.slots.length > 0 || input.mounts.tabs.length >
     shell = newShell;
   }
 
-  // 2. SUBTRACT through-hole keyholes + interior-face pockets.
-  // Both shapes share the same keyhole topology: head circle at the bottom +
-  // narrow slot rectangle + small rounded top circle. The through-hole goes
-  // all the way through (Z=[0, backThickness]); the pocket is wider by
-  // `mountShankDiameter` on each side and recessed only halfway into the
-  // panel from the letter-interior face (Z=[backThickness × 0.5, backThickness]).
-  // The pocket gives the screw head clearance after it has passed through
-  // the through-hole.
+  // 2. SUBTRACT keyhole through-holes (full panel depth, no back pocket).
+  // Keyhole topology: head circle at the bottom + narrow slot rectangle +
+  // small rounded top circle, so both ends of the slot are rounded.
+  const keyholeHeight = input.backThickness;
+  const keyholeCenterZ = input.backThickness / 2;
+
   for (const slot of input.mounts.slots) {
     const halfHead = slot.headDiameter / 2;
     const halfShank = slot.shankDiameter / 2;
     const headCenterY = slot.y - slot.slotLength;
     const slotMidY = slot.y - slot.slotLength / 2;
 
-    // Through-hole.
-    const tCenterZ = input.backThickness / 2;
-    const tHead = Manifold.cylinder(input.backThickness, halfHead, halfHead, undefined, true);
-    const tHeadPos = tHead.translate([slot.x, headCenterY, tCenterZ]);
-    const tSlotTop = Manifold.cylinder(input.backThickness, halfShank, halfShank, undefined, true);
-    const tSlotTopPos = tSlotTop.translate([slot.x, slot.y, tCenterZ]);
-    const tSlotBox = Manifold.cube([slot.shankDiameter, slot.slotLength, input.backThickness], true);
-    const tSlotBoxPos = tSlotBox.translate([slot.x, slotMidY, tCenterZ]);
-    const tHeadPlusSlot = tHeadPos.add(tSlotBoxPos);
-    const through = tHeadPlusSlot.add(tSlotTopPos);
+    const head = Manifold.cylinder(keyholeHeight, halfHead, halfHead, undefined, true);
+    const headPos = head.translate([slot.x, headCenterY, keyholeCenterZ]);
+    const slotTop = Manifold.cylinder(keyholeHeight, halfShank, halfShank, undefined, true);
+    const slotTopPos = slotTop.translate([slot.x, slot.y, keyholeCenterZ]);
+    const slotBox = Manifold.cube([slot.shankDiameter, slot.slotLength, keyholeHeight], true);
+    const slotBoxPos = slotBox.translate([slot.x, slotMidY, keyholeCenterZ]);
+    const headPlusSlot = headPos.add(slotBoxPos);
+    const keyhole = headPlusSlot.add(slotTopPos);
 
-    const shellMinusThrough = shell.subtract(through);
-    tHead.delete(); tHeadPos.delete();
-    tSlotTop.delete(); tSlotTopPos.delete();
-    tSlotBox.delete(); tSlotBoxPos.delete();
-    tHeadPlusSlot.delete(); through.delete();
-    shell.delete(); shell = shellMinusThrough;
-
-    // Pocket on the letter-interior face — same shape, wider by pocketMargin,
-    // recessed half the panel depth from the high-Z face.
-    const pocketMargin = slot.shankDiameter;
-    const pocketDepth = input.backThickness * 0.5;
-    const pCenterZ = input.backThickness - pocketDepth / 2;
-    const pHead = Manifold.cylinder(pocketDepth, halfHead + pocketMargin, halfHead + pocketMargin, undefined, true);
-    const pHeadPos = pHead.translate([slot.x, headCenterY, pCenterZ]);
-    const pSlotTop = Manifold.cylinder(pocketDepth, halfShank + pocketMargin, halfShank + pocketMargin, undefined, true);
-    const pSlotTopPos = pSlotTop.translate([slot.x, slot.y, pCenterZ]);
-    const pSlotBox = Manifold.cube(
-      [slot.shankDiameter + 2 * pocketMargin, slot.slotLength, pocketDepth],
-      true,
-    );
-    const pSlotBoxPos = pSlotBox.translate([slot.x, slotMidY, pCenterZ]);
-    const pHeadPlusSlot = pHeadPos.add(pSlotBoxPos);
-    const pocket = pHeadPlusSlot.add(pSlotTopPos);
-
-    const shellMinusPocket = shell.subtract(pocket);
-    pHead.delete(); pHeadPos.delete();
-    pSlotTop.delete(); pSlotTopPos.delete();
-    pSlotBox.delete(); pSlotBoxPos.delete();
-    pHeadPlusSlot.delete(); pocket.delete();
-    shell.delete(); shell = shellMinusPocket;
+    const newShell = shell.subtract(keyhole);
+    head.delete(); headPos.delete();
+    slotTop.delete(); slotTopPos.delete();
+    slotBox.delete(); slotBoxPos.delete();
+    headPlusSlot.delete(); keyhole.delete();
+    shell.delete(); shell = newShell;
   }
 }
 ```

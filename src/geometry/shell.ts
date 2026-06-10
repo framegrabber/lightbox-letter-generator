@@ -117,84 +117,42 @@ export async function buildLetterShell(input: ShellInputs): Promise<ShellMeshRes
       shell = newShell;
     }
 
-    // 2. SUBTRACT keyhole through-holes + back-side pockets.
+    // 2. SUBTRACT keyhole through-holes.
     // Keyhole always sits at the very back: through the back panel for
     // flat-back letters, through the union'd tabs for open-back letters.
-    // Both modes share Z ∈ [0, backThickness] for the through-hole, with a
-    // pocket recess on the back face (Z ∈ [0, backThickness × 0.5]) sized
-    // wider than the through-hole by `mountShankDiameter` on each side.
+    // Z ∈ [0, backThickness].
     //
-    // The keyhole shape itself is: head circle at the bottom + narrow slot
-    // rectangle + small rounded top circle, so both ends of the slot are
-    // rounded. Matches the reference keyhole-hanger geometry.
+    // The keyhole shape is: head circle at the bottom + narrow slot box +
+    // small rounded top circle, so both ends of the slot are rounded —
+    // a stadium with a wider head bulb at the bottom.
+    const keyholeHeight = input.backThickness;
+    const keyholeCenterZ = input.backThickness / 2;
+
     for (const slot of input.mounts.slots) {
       const halfHead = slot.headDiameter / 2;
       const halfShank = slot.shankDiameter / 2;
       const headCenterY = slot.y - slot.slotLength;
       const slotMidY = slot.y - slot.slotLength / 2;
 
-      // --- Through-hole: keyhole shape, full panel depth.
-      const tCenterZ = input.backThickness / 2;
-      const tHead = Manifold.cylinder(input.backThickness, halfHead, halfHead, undefined, true);
-      const tHeadPos = tHead.translate([slot.x, headCenterY, tCenterZ]);
-      const tSlotTop = Manifold.cylinder(input.backThickness, halfShank, halfShank, undefined, true);
-      const tSlotTopPos = tSlotTop.translate([slot.x, slot.y, tCenterZ]);
-      const tSlotBox = Manifold.cube(
-        [slot.shankDiameter, slot.slotLength, input.backThickness],
+      const head = Manifold.cylinder(keyholeHeight, halfHead, halfHead, undefined, true);
+      const headPos = head.translate([slot.x, headCenterY, keyholeCenterZ]);
+      const slotTop = Manifold.cylinder(keyholeHeight, halfShank, halfShank, undefined, true);
+      const slotTopPos = slotTop.translate([slot.x, slot.y, keyholeCenterZ]);
+      const slotBox = Manifold.cube(
+        [slot.shankDiameter, slot.slotLength, keyholeHeight],
         true,
       );
-      const tSlotBoxPos = tSlotBox.translate([slot.x, slotMidY, tCenterZ]);
-      const tHeadPlusSlot = tHeadPos.add(tSlotBoxPos);
-      const through = tHeadPlusSlot.add(tSlotTopPos);
+      const slotBoxPos = slotBox.translate([slot.x, slotMidY, keyholeCenterZ]);
+      const headPlusSlot = headPos.add(slotBoxPos);
+      const keyhole = headPlusSlot.add(slotTopPos);
 
-      const shellMinusThrough = shell.subtract(through);
-      tHead.delete(); tHeadPos.delete();
-      tSlotTop.delete(); tSlotTopPos.delete();
-      tSlotBox.delete(); tSlotBoxPos.delete();
-      tHeadPlusSlot.delete(); through.delete();
+      const newShell = shell.subtract(keyhole);
+      head.delete(); headPos.delete();
+      slotTop.delete(); slotTopPos.delete();
+      slotBox.delete(); slotBoxPos.delete();
+      headPlusSlot.delete(); keyhole.delete();
       shell.delete();
-      shell = shellMinusThrough;
-
-      // --- Pocket on the letter-interior face: same keyhole shape, wider by
-      //     `pocketMargin`, recessed half the panel depth from the high-Z face
-      //     (where the screw head ends up after passing through the through-
-      //     hole). For open-back the head sits in the rear cavity behind the
-      //     tab; for flat-back it sits in the front cavity above the back
-      //     panel. Either way the head clears the panel cleanly.
-      const pocketMargin = slot.shankDiameter;
-      const pocketDepth = input.backThickness * 0.5;
-      const pCenterZ = input.backThickness - pocketDepth / 2;
-      const pHead = Manifold.cylinder(
-        pocketDepth,
-        halfHead + pocketMargin,
-        halfHead + pocketMargin,
-        undefined,
-        true,
-      );
-      const pHeadPos = pHead.translate([slot.x, headCenterY, pCenterZ]);
-      const pSlotTop = Manifold.cylinder(
-        pocketDepth,
-        halfShank + pocketMargin,
-        halfShank + pocketMargin,
-        undefined,
-        true,
-      );
-      const pSlotTopPos = pSlotTop.translate([slot.x, slot.y, pCenterZ]);
-      const pSlotBox = Manifold.cube(
-        [slot.shankDiameter + 2 * pocketMargin, slot.slotLength, pocketDepth],
-        true,
-      );
-      const pSlotBoxPos = pSlotBox.translate([slot.x, slotMidY, pCenterZ]);
-      const pHeadPlusSlot = pHeadPos.add(pSlotBoxPos);
-      const pocket = pHeadPlusSlot.add(pSlotTopPos);
-
-      const shellMinusPocket = shell.subtract(pocket);
-      pHead.delete(); pHeadPos.delete();
-      pSlotTop.delete(); pSlotTopPos.delete();
-      pSlotBox.delete(); pSlotBoxPos.delete();
-      pHeadPlusSlot.delete(); pocket.delete();
-      shell.delete();
-      shell = shellMinusPocket;
+      shell = newShell;
     }
   }
 
