@@ -87,4 +87,19 @@ describe("buildReadme", () => {
     );
     expect(txt).toContain("Cable hole ends:   yes");
   });
+
+  it("includes mount parameters in the parameter dump", () => {
+    const txt = buildReadme(
+      {
+        ...DEFAULT_PARAMETERS,
+        mountShankDiameter: 4,
+        mountSlotY: 150,
+        mountSlotXInset: 20,
+      },
+      "https://example.com/?p=foo",
+    );
+    expect(txt).toContain("Mount shank dia:   4 mm");
+    expect(txt).toContain("Mount slot Y:      150 mm");
+    expect(txt).toContain("Mount slot inset:  20 mm");
+  });
 });
