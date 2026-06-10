@@ -27,6 +27,7 @@ function buildReproduceUrl(params: Parameters): string {
     bridgeHeight: params.bridgeHeight,
     bridgeY: params.bridgeY,
     plexiTolerance: params.plexiTolerance,
+    backCavityDepth: params.backCavityDepth,
   };
   const url = new URL(window.location.origin + window.location.pathname);
   url.searchParams.set("p", JSON.stringify(serializable));

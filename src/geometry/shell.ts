@@ -8,6 +8,7 @@ export type ShellInputs = {
   wallThickness: number;
   rabbetDepth: number;
   insetWidth: number; // shelf width where the plexi rests; lip = wallThickness − insetWidth
+  backCavityDepth: number; // hollow cavity behind the back panel; 0 = today's flat-back behavior
 };
 
 export type ShellMeshResult =
@@ -27,9 +28,6 @@ export async function buildLetterShell(input: ShellInputs): Promise<ShellMeshRes
 
   const outer = new CrossSection(input.contours, "NonZero");
   const cavity = outer.offset(-input.wallThickness, "Round");
-  // The rabbet polygon is offset inward by the lip width (wall − shelf).
-  // insetWidth is the shelf where plexi rests; the lip is whatever is left
-  // of the wall after carving out that shelf.
   const lipWidth = input.wallThickness - input.insetWidth;
   const rabbetCut = outer.offset(-lipWidth, "Round");
 
@@ -40,16 +38,40 @@ export async function buildLetterShell(input: ShellInputs): Promise<ShellMeshRes
     return { ok: false, reason: "offset_collapsed" };
   }
 
-  const outerPrism = outer.extrude(input.totalDepth);
+  // Coordinate system: Z=0 is the lowest face (open back when backCavityDepth>0,
+  // back panel when backCavityDepth=0). Z=top is the front face.
+  const top = input.totalDepth + input.backCavityDepth;
 
-  const cavityExtruded = cavity.extrude(input.totalDepth - input.backThickness);
-  const cavityPrism = cavityExtruded.translate([0, 0, input.backThickness]);
+  const outerPrism = outer.extrude(top);
 
+  // Front cavity: above the internal panel, up to the front face.
+  const frontCavityHeight = top - (input.backCavityDepth + input.backThickness);
+  const frontCavityExtruded = cavity.extrude(frontCavityHeight);
+  const frontCavityPrism = frontCavityExtruded.translate([
+    0,
+    0,
+    input.backCavityDepth + input.backThickness,
+  ]);
+
+  // Rabbet step at the front face.
   const rabbetExtruded = rabbetCut.extrude(input.rabbetDepth);
-  const rabbetPrism = rabbetExtruded.translate([0, 0, input.totalDepth - input.rabbetDepth]);
+  const rabbetPrism = rabbetExtruded.translate([0, 0, top - input.rabbetDepth]);
 
-  const shellMinusCavity = outerPrism.subtract(cavityPrism);
-  const shell = shellMinusCavity.subtract(rabbetPrism);
+  // Always-present subtractions.
+  const shellMinusFrontCavity = outerPrism.subtract(frontCavityPrism);
+  const shellNoRear = shellMinusFrontCavity.subtract(rabbetPrism);
+  shellMinusFrontCavity.delete();
+
+  // Conditional rear cavity (skip the allocation entirely when backCavityDepth = 0).
+  let shell;
+  if (input.backCavityDepth > 0) {
+    const rearCavityPrism = cavity.extrude(input.backCavityDepth);
+    shell = shellNoRear.subtract(rearCavityPrism);
+    shellNoRear.delete();
+    rearCavityPrism.delete();
+  } else {
+    shell = shellNoRear;
+  }
 
   const mesh = shell.getMesh();
   // Copy typed array views into owned arrays before any .delete() calls;
@@ -62,11 +84,10 @@ export async function buildLetterShell(input: ShellInputs): Promise<ShellMeshRes
   cavity.delete();
   rabbetCut.delete();
   outerPrism.delete();
-  cavityExtruded.delete();
-  cavityPrism.delete();
+  frontCavityExtruded.delete();
+  frontCavityPrism.delete();
   rabbetExtruded.delete();
   rabbetPrism.delete();
-  shellMinusCavity.delete();
   shell.delete();
 
   return {
@@ -82,6 +103,7 @@ export type PlexiInputs = {
   wallThickness: number;
   insetWidth: number;
   plexiTolerance: number;
+  backCavityDepth: number;
 };
 
 // Standalone mesh of just the plexi piece — same XY shape as the rabbet
@@ -103,8 +125,9 @@ export async function buildLetterPlexi(input: PlexiInputs): Promise<{ vertProper
     return null;
   }
 
+  const top = input.totalDepth + input.backCavityDepth;
   const extruded = rabbetCut.extrude(input.rabbetDepth);
-  const positioned = extruded.translate([0, 0, input.totalDepth - input.rabbetDepth]);
+  const positioned = extruded.translate([0, 0, top - input.rabbetDepth]);
   const mesh = positioned.getMesh();
   const vertProperties = mesh.vertProperties.slice();
   const triVerts = mesh.triVerts.slice();
@@ -138,7 +161,7 @@ export function centerMeshXY(mesh: { vertProperties: Float32Array; triVerts: Uin
   for (let i = 0; i < v.length; i += 3) {
     out[i] = v[i] - cx;
     out[i + 1] = v[i + 1] - cy;
-    out[i + 2] = v[i + 2]; // Z = 0 at back already from extrusion
+    out[i + 2] = v[i + 2]; // Z = 0 at the lowest face from buildLetterShell's extrusion
   }
   return {
     vertProperties: out,

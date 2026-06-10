@@ -72,4 +72,25 @@ describe("persistence migrate", () => {
     const out = migrate({ letterHeight: 200, plexiTolerance: 0 });
     expect(out.plexiTolerance).toBe(0);
   });
+
+  it("fills backCavityDepth default when missing", () => {
+    const out = migrate({
+      letterHeight: 200,
+      wallThickness: 10,
+    });
+    expect(out.backCavityDepth).toBe(20);
+  });
+
+  it("preserves an existing backCavityDepth value", () => {
+    const out = migrate({
+      letterHeight: 200,
+      backCavityDepth: 35,
+    });
+    expect(out.backCavityDepth).toBe(35);
+  });
+
+  it("preserves backCavityDepth: 0 (falsy but valid)", () => {
+    const out = migrate({ letterHeight: 200, backCavityDepth: 0 });
+    expect(out.backCavityDepth).toBe(0);
+  });
 });

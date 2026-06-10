@@ -65,6 +65,7 @@ describe("connected-letters bounds", () => {
     bridgeHeight: 0,
     bridgeY: -50,
     plexiTolerance: 0.2,
+    backCavityDepth: 20,
   };
 
   it("accepts zero defaults", () => {
@@ -114,6 +115,7 @@ describe("plexiTolerance bounds", () => {
     bridgeHeight: 0,
     bridgeY: 50,
     plexiTolerance: 0.2,
+    backCavityDepth: 20,
   };
 
   it("accepts the default", () => {
@@ -140,5 +142,41 @@ describe("plexiTolerance bounds", () => {
 
   it("accepts a value just under the upper bound", () => {
     expect(validate({ ...base, plexiTolerance: 4.9 }).ok).toBe(true);
+  });
+});
+
+describe("backCavityDepth bounds", () => {
+  const base = {
+    text: "ABC",
+    fontSource: { kind: "bundled" as const, id: "anton" },
+    letterHeight: 100,
+    wallThickness: 10,
+    totalDepth: 50,
+    backThickness: 2,
+    rabbetDepth: 5,
+    insetWidth: 5,
+    bezierTolerance: 0.1,
+    letterOverlap: 0,
+    bridgeWidth: 0,
+    bridgeHeight: 0,
+    bridgeY: 50,
+    plexiTolerance: 0.1,
+    backCavityDepth: 20,
+  };
+
+  it("accepts the default", () => {
+    expect(validate(base).ok).toBe(true);
+  });
+
+  it("accepts zero", () => {
+    expect(validate({ ...base, backCavityDepth: 0 }).ok).toBe(true);
+  });
+
+  it("rejects negative", () => {
+    expect(validate({ ...base, backCavityDepth: -1 }).ok).toBe(false);
+  });
+
+  it("rejects non-finite", () => {
+    expect(validate({ ...base, backCavityDepth: NaN }).ok).toBe(false);
   });
 });

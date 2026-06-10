@@ -38,6 +38,7 @@ export function buildReadme(
     `  Bridge height:     ${params.bridgeHeight} mm`,
     `  Bridge Y:          ${params.bridgeY} mm`,
     `  Plexi tolerance:   ${params.plexiTolerance} mm`,
+    `  Back cavity depth: ${params.backCavityDepth} mm`,
     ``,
     `Files in this archive:`,
     `  stl/chars/NN_<chars>_char.stl    — 3D-printable letter shells`,

@@ -54,4 +54,12 @@ describe("buildReadme", () => {
     expect(txt).not.toContain("stl/NN_<chars>.stl");
     expect(txt).not.toContain("plexi/NN_<chars>.svg");
   });
+
+  it("includes backCavityDepth in the parameter dump", () => {
+    const txt = buildReadme(
+      { ...DEFAULT_PARAMETERS, backCavityDepth: 35 },
+      "https://example.com/?p=foo",
+    );
+    expect(txt).toContain("Back cavity depth: 35 mm");
+  });
 });

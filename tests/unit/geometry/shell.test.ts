@@ -20,6 +20,7 @@ describe("buildLetterShell", () => {
     wallThickness: 5,
     rabbetDepth: 3,
     insetWidth: 3, // shelf width; lip = wall − inset = 2mm (matches the old rabbetLipWidth: 2)
+    backCavityDepth: 0,
   };
 
   function contoursFor(ch: string) {
@@ -53,11 +54,12 @@ describe("buildLetterShell", () => {
     if (!result.ok) expect(result.reason).toBe("offset_collapsed");
   }, 30_000);
 
-  it("produces a rabbet step (vertices at totalDepth - rabbetDepth) for 'M'", async () => {
+  it("produces a rabbet step (vertices at top - rabbetDepth) for 'M'", async () => {
     const result = await buildLetterShell({ ...baseInputs, contours: contoursFor("M") });
     expect(result.ok).toBe(true);
     if (!result.ok) return;
-    const expectedShelfZ = baseInputs.totalDepth - baseInputs.rabbetDepth; // 25 - 3 = 22
+    const top = baseInputs.totalDepth + baseInputs.backCavityDepth; // 25 + 0 = 25
+    const expectedShelfZ = top - baseInputs.rabbetDepth; // 25 - 3 = 22
     let found = false;
     const v = result.mesh.vertProperties;
     for (let i = 2; i < v.length; i += 3) {
@@ -90,7 +92,7 @@ describe("buildLetterPlexi tolerance", () => {
 
   it("plexiTolerance>0 produces a smaller mesh than tolerance=0", async () => {
     const contours = contoursForLetter("M");
-    const base = { contours, totalDepth: 25, rabbetDepth: 3, wallThickness: 5, insetWidth: 3 };
+    const base = { contours, totalDepth: 25, rabbetDepth: 3, wallThickness: 5, insetWidth: 3, backCavityDepth: 0 };
 
     const noTol = await buildLetterPlexi({ ...base, plexiTolerance: 0 });
     const withTol = await buildLetterPlexi({ ...base, plexiTolerance: 0.4 });
@@ -105,5 +107,73 @@ describe("buildLetterPlexi tolerance", () => {
     const widthDelta = (a.maxX - a.minX) - (b.maxX - b.minX);
     expect(widthDelta).toBeGreaterThan(0.5);
     expect(widthDelta).toBeLessThan(1.1);
+  }, 30_000);
+});
+
+describe("buildLetterShell with backCavityDepth", () => {
+  const buf = readFileSync(resolve(__dirname, "../../fixtures/fonts/Inter-Regular.ttf"));
+  const font = opentype.parse(buf.buffer.slice(buf.byteOffset, buf.byteOffset + buf.byteLength));
+
+  function contoursForLetter(ch: string) {
+    const scale = capHeightScale(font, 100);
+    const raw = flattenGlyph(font.charToGlyph(ch), font.unitsPerEm, 0.1);
+    return raw.map((p) => p.map(([x, y]) => [x * scale, y * scale] as [number, number]));
+  }
+
+  function meshZBbox(mesh: { vertProperties: Float32Array; triVerts: Uint32Array }) {
+    let minZ = Infinity, maxZ = -Infinity;
+    for (let i = 2; i < mesh.vertProperties.length; i += 3) {
+      const z = mesh.vertProperties[i];
+      if (z < minZ) minZ = z;
+      if (z > maxZ) maxZ = z;
+    }
+    return { minZ, maxZ };
+  }
+
+  const baseInputs = {
+    contours: [] as ReturnType<typeof contoursForLetter>,
+    totalDepth: 25,
+    backThickness: 2,
+    wallThickness: 5,
+    rabbetDepth: 3,
+    insetWidth: 3,
+  };
+
+  it("backCavityDepth=0 produces Z range [0, totalDepth] (today's behavior)", async () => {
+    const result = await buildLetterShell({
+      ...baseInputs,
+      contours: contoursForLetter("M"),
+      backCavityDepth: 0,
+    });
+    expect(result.ok).toBe(true);
+    if (!result.ok) return;
+    const { minZ, maxZ } = meshZBbox(result.mesh);
+    expect(minZ).toBeCloseTo(0, 4);
+    expect(maxZ).toBeCloseTo(25, 4);
+  }, 30_000);
+
+  it("backCavityDepth=20 grows the Z range by exactly 20mm", async () => {
+    const result = await buildLetterShell({
+      ...baseInputs,
+      contours: contoursForLetter("M"),
+      backCavityDepth: 20,
+    });
+    expect(result.ok).toBe(true);
+    if (!result.ok) return;
+    const { minZ, maxZ } = meshZBbox(result.mesh);
+    expect(minZ).toBeCloseTo(0, 4);
+    expect(maxZ).toBeCloseTo(45, 4); // totalDepth(25) + backCavityDepth(20)
+    // Verify the rear cavity was actually carved: the internal panel top sits
+    // at Z = backCavityDepth (= 20). Vertices at that Z only exist when the
+    // rear cavity subtraction ran — without it, the inside of the perimeter
+    // wall is solid material from Z=0 to the front cavity floor at Z=22.
+    let foundPanelTop = false;
+    for (let i = 2; i < result.mesh.vertProperties.length; i += 3) {
+      if (Math.abs(result.mesh.vertProperties[i] - 20) < 0.01) {
+        foundPanelTop = true;
+        break;
+      }
+    }
+    expect(foundPanelTop).toBe(true);
   }, 30_000);
 });

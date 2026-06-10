@@ -70,5 +70,9 @@ export function validate(p: Parameters): ValidationResult {
     });
   }
 
+  if (!Number.isFinite(p.backCavityDepth) || p.backCavityDepth < 0) {
+    errors.push({ field: "backCavityDepth", message: "Back cavity depth must be ≥ 0" });
+  }
+
   return errors.length === 0 ? { ok: true } : { ok: false, errors };
 }

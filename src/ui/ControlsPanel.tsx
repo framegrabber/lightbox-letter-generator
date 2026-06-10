@@ -78,6 +78,14 @@ export function ControlsPanel() {
           onChange={(v) => params.set({ backThickness: v })}
           error={errorFor(errs, "backThickness")}
         />
+        <NumberField
+          label="Back cavity depth"
+          unit="mm"
+          value={params.backCavityDepth}
+          onChange={(v) => params.set({ backCavityDepth: v })}
+          error={errorFor(errs, "backCavityDepth")}
+          step={1}
+        />
       </fieldset>
 
       <fieldset>
