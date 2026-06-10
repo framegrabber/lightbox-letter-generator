@@ -371,8 +371,8 @@ describe("buildLetterShell with mounts", () => {
       maxX: slotX + 4,
       minY: 50 - 8 - 2 - 2,
       maxY: 50 + 2,
-      zBottom: baseInputs.backCavityDepth - baseInputs.backThickness,
-      zTop: baseInputs.backCavityDepth,
+      zBottom: 0,
+      zTop: baseInputs.backThickness,
     };
     const withMounts = await buildLetterShell({
       ...baseInputs,

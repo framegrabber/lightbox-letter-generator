@@ -107,15 +107,17 @@ If a bridge sits at the same Y/Z as a cable hole, the cylinder pierces the bridg
 
 `mountShankDiameter`, `mountSlotY`, `mountSlotXInset` (in `state/parameters.ts`) drive the keyhole-mount step. Default `mountShankDiameter = 0` disables the feature; geometry is unchanged. `headDiameter = 2 × shank` and `slotLength = 4 × shank` are derived in `mounts.ts` and never stored.
 
-`src/geometry/mounts.ts` is a pure helper: given a component bbox and mount params, it returns a `MountPlan` of two slots (one per side, at `bbox.minX + xInset` / `bbox.maxX − xInset`) and zero or two tabs. Tabs only emerge when `backCavityDepth > 0`; their Z range is `[max(0, backCavityDepth − backThickness), backCavityDepth]` (clamped at 0 for very small back cavities so the tab never protrudes past the open back).
+`src/geometry/mounts.ts` is a pure helper: given the component's merged contours and mount params, it returns a `MountPlan` of two slots (one per side) and zero or two tabs. Slot X positions come from `xExtentAtY(contours, mountSlotY)` (imported from `cable-holes.ts`) — the slice's `minX + xInset` and `maxX − xInset`. Bbox-based positioning would put a slot in air for tapering letters (V, A) at high Y values where the actual material is narrow; the slice picks the real wall positions.
 
-`worker.ts` calls `computeMounts` per component using the merged-component bbox. For separate components, each gets its own pair of slots (and tabs). For merged components (overlap or bridges), the merged bbox places slots near the outer edges of the joined piece.
+If `mountSlotY` is outside the contour's Y range, `xExtentAtY` returns null and `computeMounts` returns an empty plan — the user sees no keyholes in the preview and adjusts.
 
-`shell.ts`'s mount block runs **after** cable-hole drilling: tabs are unioned in via `Manifold.cube` first, then keyholes (head cylinder via `Manifold.cylinder` + shank slot box via `Manifold.cube`, unioned together) are subtracted. The block runs through one Z range — `[0, backThickness]` for flat-back, `[max(0, backCavityDepth − backThickness), backCavityDepth]` for open-back — so the partition stays solid above the keyhole in open-back mode.
+`worker.ts` calls `computeMounts` per component using the merged contours. For separate components, each gets its own pair of slots (and tabs). For merged components (overlap or bridges), the merged contours place slots at the actual wall positions on the outer letters of the joined piece.
+
+`shell.ts`'s mount block runs **after** cable-hole drilling: tabs are unioned in via `Manifold.cube` first, then keyholes (head cylinder via `Manifold.cylinder` + shank slot box via `Manifold.cube`, unioned together) are subtracted. Both stages share Z ∈ `[0, backThickness]` — the very rear of the letter. For flat-back (`backCavityDepth = 0`) the keyhole goes through the back panel directly. For open-back the tab fills the gap at the open rear so the keyhole has material to cut through; the partition further forward stays solid.
 
 Slot orientation: round head opening at the BOTTOM, narrow shank slot extending UPWARD. `mountSlotY` is the Y of the screw's resting position (= top of the slot). The user marks the wall and drills the screws at letter-coord Y = `mountSlotY`.
 
-The tab attaches to the partition's bottom face (Z = `backCavityDepth`) and is sized just to bracket the keyhole shape with 2 mm margin on each side. It does not extend to the perimeter wall — the partition spans the full outer outline at any (X, Y) inside the letter, so the tab fuses with the partition wherever the slot sits inside material.
+Tabs (open-back only) are sized to bracket the keyhole shape with a 2 mm margin in Y, and stretch in X from the slice edge (just outside `slice.minX` for the left tab, just past `slice.maxX` for the right) to past the slot. The slice-edge anchor guarantees the tab fuses with the perimeter wall material at `mountSlotY`, so no floating geometry results regardless of letter shape.
 
 ## `NumberField` behaviour
 
@@ -168,7 +170,6 @@ lightbox-<text>-<localIso>.zip
 - opentype.js's variable-font handling is unreliable for some files. Prefer static Regular weights when bundling.
 - ESLint flat config (`eslint.config.js`) — not legacy `.eslintrc`. The `lint` script just calls `eslint src` and lets the flat config's `files:` glob do the scoping.
 - `verbatimModuleSyntax` is on, so type-only imports must use `import type { ... }`. Mixed default/type imports are common (`import opentype from "opentype.js"` for the namespace; type access like `opentype.Font` is type-only and fine).
-- Mount tabs are not clipped against the letter outline. With narrow letters or large `mountSlotXInset`, a tab can extend past the outline (overhang in the rear cavity) or float entirely if the slot center sits outside the bbox at the slot Y. The preview shows it; trust-the-user policy applies. Reduce inset or pick wider letters.
 
 ## Spec / plan
 

@@ -77,7 +77,7 @@ ctx.onmessage = async (ev: MessageEvent<WorkerRequest>) => {
       return holeMaxX >= comp.bbox.minX && holeMinX <= comp.bbox.maxX;
     });
 
-    const componentMounts = computeMounts(comp.bbox, {
+    const componentMounts = computeMounts(comp.mergedContours, {
       mountShankDiameter: req.params.mountShankDiameter,
       mountSlotY: req.params.mountSlotY,
       mountSlotXInset: req.params.mountSlotXInset,

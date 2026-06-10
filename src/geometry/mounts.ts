@@ -1,3 +1,6 @@
+import { xExtentAtY } from "./cable-holes";
+import type { GlyphContours } from "./types";
+
 export type MountSlot = {
   x: number;
   y: number;
@@ -29,11 +32,28 @@ export type MountParams = {
   backCavityDepth: number;
 };
 
+// Slot positions are derived from the X-extent of letter material AT mountSlotY,
+// not the overall bbox. Tapering letters (V, A) have a wide bbox but narrow
+// material at high Y, so a bbox-based slot would land in air. The slice picks
+// the actual wall positions at the slot's Y.
+//
+// Tabs (open-back only) and the keyhole both sit at Z ∈ [0, backThickness] —
+// at the very rear of the letter. The user mounts the letter on a wall, the
+// screw protrudes from the wall by a few mm, the screw shank rides through
+// the keyhole at Z=0, and the head is captured behind the tab/back panel.
+// For open-back letters the tab fills the gap that the open rear cavity
+// would otherwise leave; the tab's X span reaches back to the slice edge so
+// it fuses with the perimeter wall material at slotY.
 export function computeMounts(
-  componentBBox: { minX: number; maxX: number; minY: number; maxY: number },
+  mergedContours: GlyphContours,
   params: MountParams,
 ): MountPlan {
   if (params.mountShankDiameter <= 0) {
+    return { slots: [], tabs: [] };
+  }
+
+  const slice = xExtentAtY(mergedContours, params.mountSlotY);
+  if (!slice) {
     return { slots: [], tabs: [] };
   }
 
@@ -42,16 +62,19 @@ export function computeMounts(
   const slotLength = 4 * shank;
   const y = params.mountSlotY;
 
+  const leftSlotX = slice.minX + params.mountSlotXInset;
+  const rightSlotX = slice.maxX - params.mountSlotXInset;
+
   const slots: MountSlot[] = [
     {
-      x: componentBBox.minX + params.mountSlotXInset,
+      x: leftSlotX,
       y,
       shankDiameter: shank,
       headDiameter: head,
       slotLength,
     },
     {
-      x: componentBBox.maxX - params.mountSlotXInset,
+      x: rightSlotX,
       y,
       shankDiameter: shank,
       headDiameter: head,
@@ -63,24 +86,33 @@ export function computeMounts(
     return { slots, tabs: [] };
   }
 
-  // Tab XY brackets the keyhole shape with a 2mm margin on each side.
+  // Tab XY brackets the keyhole shape with a 2mm margin and reaches back to
+  // the slice edge so it fuses with the perimeter wall at slotY (no floating
+  // geometry, no separate piece).
   // Keyhole Y extent: [y − slotLength − headDiameter/2, y]
-  // Tab X extent per slot: [slot.x − head/2 − 2, slot.x + head/2 + 2]
   // Tab Y extent: [y − slotLength − head/2 − 2, y + 2]
   const halfHead = head / 2;
   const tabMinY = y - slotLength - halfHead - 2;
   const tabMaxY = y + 2;
-  const zBottom = Math.max(0, params.backCavityDepth - params.backThickness);
-  const zTop = params.backCavityDepth;
-
-  const tabs: MountTab[] = slots.map((s) => ({
-    minX: s.x - halfHead - 2,
-    maxX: s.x + halfHead + 2,
-    minY: tabMinY,
-    maxY: tabMaxY,
-    zBottom,
-    zTop,
-  }));
+  const eps = 0.01;
+  const tabs: MountTab[] = [
+    {
+      minX: slice.minX - eps,
+      maxX: leftSlotX + halfHead + 2,
+      minY: tabMinY,
+      maxY: tabMaxY,
+      zBottom: 0,
+      zTop: params.backThickness,
+    },
+    {
+      minX: rightSlotX - halfHead - 2,
+      maxX: slice.maxX + eps,
+      minY: tabMinY,
+      maxY: tabMaxY,
+      zBottom: 0,
+      zTop: params.backThickness,
+    },
+  ];
 
   return { slots, tabs };
 }

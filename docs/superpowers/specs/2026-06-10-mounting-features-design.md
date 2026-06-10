@@ -35,8 +35,9 @@ Disabled by default (`mountShankDiameter = 0`). With the feature on:
 - Slots are positioned at `bbox.minX + mountSlotXInset` and `bbox.maxX − mountSlotXInset`, both at the same Y (`mountSlotY`).
 - Slot orientation: **round head opening at the BOTTOM, narrow shank slot extending UPWARD** to the screw resting position.
 - For flat-back letters, the keyhole goes through the back panel (Z range `[0, backThickness]`).
-- For open-back letters, the keyhole is cut through a **tab** that hangs from the partition's bottom face into the rear cavity. The partition itself stays solid; the front cavity is untouched. The tab is sized just large enough to host the keyhole shape with margin and is attached to the partition along its top face.
-- After install, screw heads sit in the rear cavity (open-back) or behind the back panel (flat-back) — never in the LED/plexi region.
+- For open-back letters, the keyhole is cut through a **tab** at the very rear of the letter (Z range `[0, backThickness]`). The tab fuses with the perimeter wall at `mountSlotY` by stretching in X from the slice edge to past the slot. The partition further forward stays solid; the front cavity is untouched.
+- Slot X positions are derived from `xExtentAtY(mergedContours, mountSlotY)` — the X-extent of letter material at the slot's Y, not the bbox. Tapering letters (V, A) at high Y get slots on the actual wall positions.
+- After install, the screw shank rides through the keyhole at the very rear of the letter; the screw head is captured behind the tab/back panel.
 
 For "BAR" with `letterOverlap = 0` (3 components), the user gets 6 keyholes. For a merged "BAR" component (overlap or bridges), the user gets 2 keyholes spanning the full merged piece — slots near the outer edges of B and R, ideal for a long sign.
 
@@ -65,7 +66,7 @@ A typical `mountShankDiameter = 4` (for a #6/#8 wood screw) yields head opening 
 
 ### New helper: `src/geometry/mounts.ts`
 
-Pure function, mirrors `cable-holes.ts`. No `manifold-3d` imports — runs in main thread, returns plain data.
+Pure function, mirrors `cable-holes.ts`. Imports `xExtentAtY` from `cable-holes.ts` for slice-based slot positioning. No `manifold-3d` imports.
 
 ```ts
 export type MountSlot = {
@@ -97,7 +98,7 @@ export type MountParams = {
 };
 
 export function computeMounts(
-  componentBBox: { minX: number; maxX: number; minY: number; maxY: number },
+  mergedContours: GlyphContours,
   params: MountParams,
 ): MountPlan;
 ```
@@ -105,20 +106,20 @@ export function computeMounts(
 Per-component logic:
 
 1. If `mountShankDiameter <= 0` → return `{ slots: [], tabs: [] }`.
-2. Derived: `headDiameter = 2 * shank`, `slotLength = 4 * shank`.
-3. Two slots:
-   - `leftSlot.x = bbox.minX + mountSlotXInset`
-   - `rightSlot.x = bbox.maxX − mountSlotXInset`
+2. Compute `slice = xExtentAtY(mergedContours, mountSlotY)`. If null (slotY outside the contour's Y range), return `{ slots: [], tabs: [] }`.
+3. Derived: `headDiameter = 2 * shank`, `slotLength = 4 * shank`.
+4. Two slots:
+   - `leftSlot.x = slice.minX + mountSlotXInset`
+   - `rightSlot.x = slice.maxX − mountSlotXInset`
    - Both `y = mountSlotY`.
-4. If `backCavityDepth = 0` → `tabs: []`.
-5. If `backCavityDepth > 0` → one tab per slot, sized just to host the keyhole shape with margin:
-   - X ∈ `[slot.x − headDiameter/2 − 2, slot.x + headDiameter/2 + 2]`
-   - Y ∈ `[mountSlotY − slotLength − headDiameter/2 − 2, mountSlotY + 2]`
-   - Z ∈ `[max(0, backCavityDepth − backThickness), backCavityDepth]` — clamped at 0 so very small `backCavityDepth` values don't produce tabs that protrude past the open back.
+5. If `backCavityDepth = 0` → `tabs: []`.
+6. If `backCavityDepth > 0` → one tab per slot, anchored to the slice edge so it fuses with the perimeter wall at slotY:
+   - **Left tab:** X ∈ `[slice.minX − ε, leftSlot.x + headDiameter/2 + 2]` (where `ε = 0.01`).
+   - **Right tab:** X ∈ `[rightSlot.x − headDiameter/2 − 2, slice.maxX + ε]`.
+   - Y ∈ `[mountSlotY − slotLength − headDiameter/2 − 2, mountSlotY + 2]`.
+   - Z ∈ `[0, backThickness]` — at the very rear of the letter, regardless of `backCavityDepth`.
 
-Both tabs (left and right) use the same dimensions, just centered on their respective slot. The `+2 mm` margins on each side keep load-bearing material around the cutout.
-
-The tab attaches to the partition's bottom face along its full top face (Z = `backCavityDepth`). The partition spans the full outer outline at any (X, Y) inside the letter, so as long as the slot itself sits inside letter material, the tab fuses cleanly with the partition. No tab portion extends outside the letter outline, so no floating geometry results from tabs that overshoot bbox edges on irregular letters.
+The tab attaches to the perimeter wall at slotY by overlapping the slice edge. The slice gives the actual X-extent of letter material at slotY (not the bbox), so the tab is guaranteed to fuse with the wall material wherever the wall ring exists. No floating geometry results, regardless of letter shape — tapering letters (V, A) get tabs on their actual walls at the chosen Y.
 
 ### `buildLetterShell` in `src/geometry/shell.ts`
 
@@ -128,55 +129,43 @@ The mount-drilling block runs **after** the cable-hole drilling block (so cable 
 
 ```ts
 if (input.mounts && (input.mounts.slots.length > 0 || input.mounts.tabs.length > 0)) {
-  const { Manifold, CrossSection } = m;
+  const { Manifold } = m;
 
   // 1. UNION tabs (open-back only — flat-back has empty tabs array).
   for (const tab of input.mounts.tabs) {
-    const tabXY = new CrossSection(
-      [[[tab.minX, tab.minY], [tab.maxX, tab.minY],
-        [tab.maxX, tab.maxY], [tab.minX, tab.maxY]]],
-      "Positive",
-    );
-    const tabExtruded = tabXY.extrude(tab.zTop - tab.zBottom);
-    const tabPositioned = tabExtruded.translate([0, 0, tab.zBottom]);
+    const tabSize: [number, number, number] = [
+      tab.maxX - tab.minX,
+      tab.maxY - tab.minY,
+      tab.zTop - tab.zBottom,
+    ];
+    const tabBox = Manifold.cube(tabSize, false);
+    const tabPositioned = tabBox.translate([tab.minX, tab.minY, tab.zBottom]);
     const newShell = shell.add(tabPositioned);
-    tabXY.delete(); tabExtruded.delete(); tabPositioned.delete();
+    tabBox.delete(); tabPositioned.delete();
     shell.delete();
     shell = newShell;
   }
 
-  // 2. SUBTRACT keyhole shapes.
-  const keyholeBottom = input.backCavityDepth > 0
-    ? Math.max(0, input.backCavityDepth - input.backThickness)
-    : 0;
-  const keyholeTop = input.backCavityDepth > 0
-    ? input.backCavityDepth
-    : input.backThickness;
-  const keyholeHeight = keyholeTop - keyholeBottom;
+  // 2. SUBTRACT keyhole shapes (always at the very rear of the letter:
+  // through the back panel for flat-back, through the union'd tabs for
+  // open-back).
+  const keyholeHeight = input.backThickness;
+  const keyholeCenterZ = input.backThickness / 2;
 
   for (const slot of input.mounts.slots) {
-    // Round head opening centered at (slot.x, slot.y − slotLength)
-    const head = CrossSection.circle(slot.headDiameter / 2);
-    const headPos = head.translate([slot.x, slot.y - slot.slotLength]);
+    // Round head opening (Z-cylinder, centered) at (slot.x, slot.y − slotLength).
+    const head = Manifold.cylinder(keyholeHeight, slot.headDiameter / 2, slot.headDiameter / 2, undefined, true);
+    const headPositioned = head.translate([slot.x, slot.y - slot.slotLength, keyholeCenterZ]);
 
-    // Narrow slot rectangle from (slot.y − slotLength) to slot.y
-    const slotRect = new CrossSection(
-      [[
-        [slot.x - slot.shankDiameter / 2, slot.y - slot.slotLength],
-        [slot.x + slot.shankDiameter / 2, slot.y - slot.slotLength],
-        [slot.x + slot.shankDiameter / 2, slot.y],
-        [slot.x - slot.shankDiameter / 2, slot.y],
-      ]],
-      "Positive",
-    );
+    // Narrow shank slot box (centered) from (slot.y − slotLength) to slot.y.
+    const slotBox = Manifold.cube([slot.shankDiameter, slot.slotLength, keyholeHeight], true);
+    const slotBoxPositioned = slotBox.translate([slot.x, slot.y - slot.slotLength / 2, keyholeCenterZ]);
 
-    const keyholeXY = headPos.add(slotRect);
-    const keyholeExtruded = keyholeXY.extrude(keyholeHeight);
-    const keyholePositioned = keyholeExtruded.translate([0, 0, keyholeBottom]);
-    const newShell = shell.subtract(keyholePositioned);
+    const keyhole = headPositioned.add(slotBoxPositioned);
+    const newShell = shell.subtract(keyhole);
 
-    head.delete(); headPos.delete(); slotRect.delete();
-    keyholeXY.delete(); keyholeExtruded.delete(); keyholePositioned.delete();
+    head.delete(); headPositioned.delete(); slotBox.delete(); slotBoxPositioned.delete();
+    keyhole.delete();
     shell.delete();
     shell = newShell;
   }

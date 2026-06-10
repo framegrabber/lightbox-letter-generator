@@ -118,14 +118,11 @@ export async function buildLetterShell(input: ShellInputs): Promise<ShellMeshRes
     }
 
     // 2. SUBTRACT keyhole shapes (head cylinder + shank slot box, unioned).
-    const keyholeBottom = input.backCavityDepth > 0
-      ? Math.max(0, input.backCavityDepth - input.backThickness)
-      : 0;
-    const keyholeTop = input.backCavityDepth > 0
-      ? input.backCavityDepth
-      : input.backThickness;
-    const keyholeHeight = keyholeTop - keyholeBottom;
-    const keyholeCenterZ = (keyholeBottom + keyholeTop) / 2;
+    // Keyhole always sits at the very back: through the back panel for
+    // flat-back letters, through the union'd tabs for open-back letters.
+    // Both modes share Z ∈ [0, backThickness].
+    const keyholeHeight = input.backThickness;
+    const keyholeCenterZ = input.backThickness / 2;
 
     for (const slot of input.mounts.slots) {
       // Round head opening as a Z-cylinder at (slot.x, slot.y − slotLength).
