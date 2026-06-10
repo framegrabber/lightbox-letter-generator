@@ -1,4 +1,5 @@
 import { getManifold } from "./manifold-init";
+import type { CableHole } from "./cable-holes";
 import type { GlyphContours } from "./types";
 
 export type ShellInputs = {
@@ -9,13 +10,7 @@ export type ShellInputs = {
   rabbetDepth: number;
   insetWidth: number; // shelf width where the plexi rests; lip = wallThickness − insetWidth
   backCavityDepth: number; // hollow cavity behind the back panel; 0 = today's flat-back behavior
-  cableHoles?: ReadonlyArray<{
-    x: number;
-    y: number;
-    z: number;
-    diameter: number;
-    length: number;
-  }>;
+  cableHoles?: ReadonlyArray<CableHole>;
 };
 
 export type ShellMeshResult =

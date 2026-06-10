@@ -4,6 +4,7 @@ import { flattenGlyph } from "./flatten";
 import { capHeightScale } from "./scale";
 import { layoutWord } from "./layout";
 import { mergeIntoComponents } from "./merge";
+import { computeCableHoles } from "./cable-holes";
 import { buildLetterShell, buildLetterPlexi, centerMeshXY } from "./shell";
 import { buildLetterLayers } from "../exporters/svg";
 import type { GlyphContours } from "./types";
@@ -53,6 +54,14 @@ ctx.onmessage = async (ev: MessageEvent<WorkerRequest>) => {
     bridgeY: req.params.bridgeY,
   });
 
+  const allCableHoles = computeCableHoles(layout, contoursByIndex, {
+    cableHoleDiameter: req.params.cableHoleDiameter,
+    cableHoleY: req.params.cableHoleY,
+    cableHoleZ: req.params.cableHoleZ,
+    cableHoleAtEnds: req.params.cableHoleAtEnds,
+    wallThickness: req.params.wallThickness,
+  });
+
   const components: ComponentMesh[] = [];
   const layers: ComponentLayers[] = [];
   const errors: ComponentError[] = [];
@@ -60,6 +69,12 @@ ctx.onmessage = async (ev: MessageEvent<WorkerRequest>) => {
 
   for (const comp of merged.components) {
     const memberRefs = comp.members.map((m) => ({ char: m.char, index: m.index }));
+
+    const componentCableHoles = allCableHoles.filter((h) => {
+      const holeMinX = h.x - h.length / 2;
+      const holeMaxX = h.x + h.length / 2;
+      return holeMaxX >= comp.bbox.minX && holeMinX <= comp.bbox.maxX;
+    });
 
     const meshResult = await buildLetterShell({
       contours: comp.mergedContours,
@@ -69,6 +84,7 @@ ctx.onmessage = async (ev: MessageEvent<WorkerRequest>) => {
       rabbetDepth: req.params.rabbetDepth,
       insetWidth: req.params.insetWidth,
       backCavityDepth: req.params.backCavityDepth,
+      cableHoles: componentCableHoles,
     });
 
     if (!meshResult.ok) {
