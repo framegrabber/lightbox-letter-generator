@@ -101,6 +101,10 @@ export async function buildLetterShell(input: ShellInputs): Promise<ShellMeshRes
     const { Manifold } = m;
 
     // 1. UNION tabs (open-back only — flat-back has empty tabs array).
+    // Each tab is clipped to the letter's outer outline (intersect with
+    // outerPrism) before unioning, so the tab follows the actual letter
+    // shape across its full Y range — never sticks out where the outline
+    // is narrower than slice.minX/maxX at the slot's Y.
     for (const tab of input.mounts.tabs) {
       const tabSize: [number, number, number] = [
         tab.maxX - tab.minX,
@@ -110,9 +114,11 @@ export async function buildLetterShell(input: ShellInputs): Promise<ShellMeshRes
       // Manifold.cube(size, false): one corner at origin, opposite at +size.
       const tabBox = Manifold.cube(tabSize, false);
       const tabPositioned = tabBox.translate([tab.minX, tab.minY, tab.zBottom]);
-      const newShell = shell.add(tabPositioned);
+      const tabClipped = tabPositioned.intersect(outerPrism);
+      const newShell = shell.add(tabClipped);
       tabBox.delete();
       tabPositioned.delete();
+      tabClipped.delete();
       shell.delete();
       shell = newShell;
     }

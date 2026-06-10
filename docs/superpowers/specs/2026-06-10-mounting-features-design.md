@@ -133,6 +133,9 @@ if (input.mounts && (input.mounts.slots.length > 0 || input.mounts.tabs.length >
   const { Manifold } = m;
 
   // 1. UNION tabs (open-back only — flat-back has empty tabs array).
+  // Each tab is clipped (intersect) against `outerPrism` first so it
+  // follows the actual letter outline across its full Y range — never
+  // sticks out where the outline narrows below the slot's Y.
   for (const tab of input.mounts.tabs) {
     const tabSize: [number, number, number] = [
       tab.maxX - tab.minX,
@@ -141,8 +144,9 @@ if (input.mounts && (input.mounts.slots.length > 0 || input.mounts.tabs.length >
     ];
     const tabBox = Manifold.cube(tabSize, false);
     const tabPositioned = tabBox.translate([tab.minX, tab.minY, tab.zBottom]);
-    const newShell = shell.add(tabPositioned);
-    tabBox.delete(); tabPositioned.delete();
+    const tabClipped = tabPositioned.intersect(outerPrism);
+    const newShell = shell.add(tabClipped);
+    tabBox.delete(); tabPositioned.delete(); tabClipped.delete();
     shell.delete();
     shell = newShell;
   }

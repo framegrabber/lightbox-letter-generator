@@ -358,10 +358,12 @@ describe("buildLetterShell with mounts", () => {
     expect(noMounts.ok).toBe(true);
     if (!noMounts.ok) return;
 
-    const slotX = (bbox.minX + bbox.maxX) / 2;
+    // Slot near M's left leg (well inside material at y=10 near the baseline);
+    // midX at y=50 falls in the V-valley between strokes.
+    const slotX = bbox.minX + 6;
     const slot = {
       x: slotX,
-      y: 50,
+      y: 10,
       shankDiameter: 2,
       headDiameter: 4,
       slotLength: 8,
@@ -369,8 +371,8 @@ describe("buildLetterShell with mounts", () => {
     const tab = {
       minX: slotX - 4,
       maxX: slotX + 4,
-      minY: 50 - 8 - 2 - 2,
-      maxY: 50 + 2,
+      minY: 10 - 8 - 2 - 2,
+      maxY: 10 + 2,
       zBottom: 0,
       zTop: baseInputs.backThickness,
     };
