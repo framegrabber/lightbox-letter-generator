@@ -19,6 +19,7 @@ export type Parameters = {
   bridgeHeight: number;
   bridgeY: number;
   plexiTolerance: number;
+  backCavityDepth: number;
 };
 
 const DEFAULT_LETTER_HEIGHT = 200;
@@ -38,6 +39,7 @@ export const DEFAULT_PARAMETERS: Parameters = {
   bridgeHeight: 0,
   bridgeY: DEFAULT_LETTER_HEIGHT / 2,
   plexiTolerance: 0.1,
+  backCavityDepth: 20,
 };
 
 type Store = Parameters & { set: (p: Partial<Parameters>) => void };

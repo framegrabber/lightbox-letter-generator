@@ -36,6 +36,9 @@ export function migrate(raw: Record<string, unknown>): Partial<Parameters> {
   if (typeof out.plexiTolerance !== "number") {
     out.plexiTolerance = DEFAULT_PARAMETERS.plexiTolerance;
   }
+  if (typeof out.backCavityDepth !== "number") {
+    out.backCavityDepth = DEFAULT_PARAMETERS.backCavityDepth;
+  }
 
   return out as Partial<Parameters>;
 }
@@ -79,6 +82,7 @@ export function initPersistence(): void {
       bridgeHeight: state.bridgeHeight,
       bridgeY: state.bridgeY,
       plexiTolerance: state.plexiTolerance,
+      backCavityDepth: state.backCavityDepth,
     };
     const json = JSON.stringify(ser);
     try {
