@@ -58,7 +58,9 @@ export async function buildLetterShell(input: ShellInputs): Promise<ShellMeshRes
   const rabbetPrism = rabbetExtruded.translate([0, 0, top - input.rabbetDepth]);
 
   // Always-present subtractions.
-  const shellNoRear = outerPrism.subtract(frontCavityPrism).subtract(rabbetPrism);
+  const shellMinusFrontCavity = outerPrism.subtract(frontCavityPrism);
+  const shellNoRear = shellMinusFrontCavity.subtract(rabbetPrism);
+  shellMinusFrontCavity.delete();
 
   // Conditional rear cavity (skip the allocation entirely when backCavityDepth = 0).
   let shell;
