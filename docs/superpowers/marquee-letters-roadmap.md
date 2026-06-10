@@ -10,10 +10,10 @@ The reference image: copper channel letters with circular bulbs in a regular pat
 |---|---|---|---|
 | A. Open-back / rear cavity | ✅ shipped (2026-06-10) | `specs/2026-06-10-back-cavity-design.md` | `plans/2026-06-10-back-cavity.md` |
 | C. Side-wall pass-through holes | ✅ shipped (2026-06-10) | `specs/2026-06-10-cable-holes-design.md` | `plans/2026-06-10-cable-holes.md` |
+| D. Mounting features | ✅ shipped (2026-06-11) | `specs/2026-06-10-mounting-features-design.md` | `plans/2026-06-10-mounting-features.md` |
 | B. Bulb holes on front face | ⏳ next | — | — |
-| D. Mounting features | ⏳ pending | — | — |
 
-Original sequential order was B → C → D. C shipped first by user request; B and D remain. Each is independently shippable.
+Original sequential order was B → C → D. C and D shipped first by user request; B remains.
 
 ---
 
@@ -50,44 +50,19 @@ Final shape: 4 parameters (`cableHoleDiameter`, `cableHoleY`, `cableHoleZ`, `cab
 
 ## Sub-project D — Mounting features
 
-**Goal:** Practical hardware to mount the letter to a wall. Works for both flat-back letters (no rear cavity) and open-back / rear-cavity letters.
+✅ **Shipped 2026-06-11.** Spec: `docs/superpowers/specs/2026-06-10-mounting-features-design.md`. Plan: `docs/superpowers/plans/2026-06-10-mounting-features.md`.
 
-**Open design questions:**
-
-- **Mounting style.** Three plausible options:
-  - **Keyhole slots** through the back panel — letter hangs on screws driven into the wall.
-  - **Magnet recesses** — pockets sized for round neodymium magnets glued into the back, letter sticks to a steel plate or magnetic substrate.
-  - **French cleat** — a horizontal strip on the back of the letter mates with a corresponding cleat on the wall.
-  Keyholes are the most common for marquee letters; let's start with those.
-
-- **Where do they land for flat-back letters?** Through the back panel (Z=0 to Z=`backThickness`). Punched out from the back as keyhole-shaped pockets.
-
-- **Where do they land for open-back letters?** No back panel exists at the very back — only the internal partition (which is now Z=`backCavityDepth` to Z=`backCavityDepth + backThickness`). The keyhole slots could go through the internal partition (mount visible from the rear cavity, which is fine since the user will be screwing it from there anyway). Alternative: tabs that protrude from the rear cavity walls outward, with keyholes in the tabs — but tabs add visible hardware to the front profile.
-
-- **Placement.** Manually positioned (X, Y per slot) or auto-placed (e.g. one slot at the top center, one at each lower corner)? Auto-placement with a count parameter (1, 2, or 4) is probably enough for v1.
-
-- **Slot dimensions.** Keyhole = circle (screw head) + slot below it (screw shank) so the letter slides down onto the screw. Three params: `screwHeadDiameter`, `screwShankDiameter`, `slotLength`.
-
-**Likely parameters:**
-- `mountingStyle: "none" | "keyhole"` (extensible later for magnets/cleats).
-- `mountCount: 1 | 2 | 4`.
-- `mountScrewHeadDiameter` (mm).
-- `mountScrewShankDiameter` (mm).
-- `mountSlotLength` (mm).
-
-**Estimated scope:** medium. Keyhole geometry is straightforward (circle + rectangle, subtract from back panel). Auto-placement needs to know the letter's bbox center and corners. Per-component placement (since merged components have one shared back panel). ~3 tasks.
-
-**Hard dependency:** none — works with or without sub-project A (rear cavity). The implementation just needs to detect whether to cut through the back panel (flat-back) or through the internal partition (open-back).
+Final shape: 3 parameters (`mountShankDiameter`, `mountSlotY`, `mountSlotXInset`), with `headDiameter = 2 × shank` and `slotLength = 2 × shank` derived. Two keyhole slots per component, one near each side of the merged outline. Slot X positions are derived from `xExtentAtY(mergedContours, mountSlotY)` (slice, not bbox) so tapering letters (V, A) get slots on the actual wall material at the chosen height. Both flat-back and open-back letters use the same parameter set; for open-back, a tab fills the gap at the open rear (Z ∈ `[0, backThickness]`) and is `intersect`-clipped to the letter outline so it follows the actual letter shape across its full Y range. Keyhole shape: head circle at the bottom + narrow slot box + small rounded top circle (stadium-with-bulb). Magnet recesses, French cleats, and threaded inserts remain future scope.
 
 ---
 
 ## Combined-mode acceptance
 
-When B + D ship, a user typing "BAR" with marquee defaults should get:
+When B ships, a user typing "BAR" with marquee defaults should get:
 - Open-back letters with rear cavity (A) ✓
 - Cable pass-through holes between B-A, A-R, plus power-entry holes on the outside of B and R (C) ✓
+- Two keyhole slots per letter for wall mounting (D) ✓
 - Bulb holes around the front-face perimeter (B)
-- Two keyhole slots per letter for wall mounting (D)
 
 The downloaded zip should still cleanly fit on a print bed and a slicer should orient it open-back-down without manual rotation.
 
