@@ -34,7 +34,7 @@ npm run lint     # ESLint flat config
 
 ## Coordinate system
 
-- Letters lay flat in the XY plane, extruded along **+Z**. Back face at `Z=0`, front at `Z=totalDepth`.
+- Letters lay flat in the XY plane, extruded along **+Z**. Z=0 is at the lowest face — the open back when `backCavityDepth > 0`, the back panel when `backCavityDepth = 0`. Front face at `Z = totalDepth + backCavityDepth`.
 - After `flatten.ts`'s Y-flip, **letters span Y ∈ [0, +letterHeight]** — baseline at Y=0, cap-line at Y=+letterHeight. Positive Y is up; the flip negates opentype's screen-down Y to give us a math-style coordinate system.
 - Outer contours emerge CCW, holes CW (via point-in-polygon parity correction in `flatten.ts`).
 - Camera is **Z-up** (`camera.up = (0, 0, 1)`). Auto-fit constants are at the top of `PreviewCanvas.tsx` (target fraction, dist multiplier, direction).
@@ -83,6 +83,12 @@ A bridge that doesn't actually touch both endpoints (e.g. `bridgeY` outside the 
 
 `bridgeY` defaults to `+letterHeight / 2` because letters span `Y ∈ [0, +letterHeight]` after `flatten.ts`'s Y-flip — baseline at Y=0, cap-line at Y=+letterHeight, mid-letter at Y=+letterHeight/2. The default does not auto-update when `letterHeight` changes; an intentional user value is preserved.
 
+## Back cavity
+
+`backCavityDepth` (default 20 mm) extends the perimeter wall behind the existing back panel by that amount. The back panel becomes an internal partition: front cavity above (LED + plexi diffusion), rear cavity below (open back, electronics access). Setting `backCavityDepth = 0` collapses the geometry to the original flat-back letter — verifiable by unit test.
+
+The shell mesh's coordinate system shifts so Z=0 is at the open back (lowest face) and Z=`totalDepth + backCavityDepth` is at the front. Slicers print marquee letters open-side-down by default. `buildLetterPlexi`'s Z translation tracks the new top so the plexi mesh stays aligned with the front rabbet.
+
 ## `NumberField` behaviour
 
 Local string state lets the user clear the input or type intermediate values like `"5."` without the controlled value snapping back. Commits to `onChange` whenever the text parses to a finite number; snaps back to the prop value only on blur if unparseable. Don't simplify back to a plain controlled input — that brought back "I can't clear the field to retype".
@@ -118,7 +124,7 @@ lightbox-<text>-<localIso>.zip
 
 ## Tests
 
-- 92 Vitest unit tests, mirrors the `src/` layout under `tests/unit/`.
+- 102 Vitest unit tests, mirrors the `src/` layout under `tests/unit/`.
 - `tests/e2e/smoke.spec.ts` exercises full type → download. It sets explicit params (text, height, wall thickness, inset) so it doesn't depend on the current defaults — when defaults change, the test still passes. It asserts the zip layout (`stl/chars/`, `stl/plexi/`, `svg/`, `README.txt`, no `manifest.json`).
 - Test fixture font: `tests/fixtures/fonts/Inter-Regular.ttf`.
 
@@ -140,6 +146,7 @@ lightbox-<text>-<localIso>.zip
 - Spec is current with code: `docs/superpowers/specs/2026-05-22-lightbox-letter-generator-design.md`.
 - Connected-letters feature spec: `docs/superpowers/specs/2026-06-05-connected-letters-design.md` (current with code).
 - Printable-plexi feature spec: `docs/superpowers/specs/2026-06-09-printable-plexi-design.md` (current with code).
+- Back-cavity feature spec: `docs/superpowers/specs/2026-06-10-back-cavity-design.md` (current with code).
 - Implementation plan in `docs/superpowers/plans/` is **historical** — frozen at v1, contains stale references (e.g. `rabbetLipWidth`). Treat as an artifact; don't update.
 
 ## Working with this code
