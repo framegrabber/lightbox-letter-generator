@@ -151,6 +151,42 @@ export function ControlsPanel() {
         />
       </fieldset>
 
+      <fieldset>
+        <legend>Cable holes</legend>
+        <NumberField
+          label="Cable hole diameter"
+          unit="mm"
+          value={params.cableHoleDiameter}
+          onChange={(v) => params.set({ cableHoleDiameter: v })}
+          error={errorFor(errs, "cableHoleDiameter")}
+          step={0.5}
+        />
+        <NumberField
+          label="Cable hole Y"
+          unit="mm"
+          value={params.cableHoleY}
+          onChange={(v) => params.set({ cableHoleY: v })}
+          error={errorFor(errs, "cableHoleY")}
+          step={1}
+        />
+        <NumberField
+          label="Cable hole Z"
+          unit="mm"
+          value={params.cableHoleZ}
+          onChange={(v) => params.set({ cableHoleZ: v })}
+          error={errorFor(errs, "cableHoleZ")}
+          step={1}
+        />
+        <label className="checkbox-field">
+          <input
+            type="checkbox"
+            checked={params.cableHoleAtEnds}
+            onChange={(e) => params.set({ cableHoleAtEnds: e.target.checked })}
+          />
+          Power-entry holes on outer ends
+        </label>
+      </fieldset>
+
       <details>
         <summary>Advanced</summary>
         <NumberField
