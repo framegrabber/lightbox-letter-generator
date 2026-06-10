@@ -73,6 +73,10 @@ export function build(params: Parameters, fontBuffer: ArrayBuffer): Promise<Buil
     bridgeY: params.bridgeY,
     plexiTolerance: params.plexiTolerance,
     backCavityDepth: params.backCavityDepth,
+    cableHoleDiameter: params.cableHoleDiameter,
+    cableHoleY: params.cableHoleY,
+    cableHoleZ: params.cableHoleZ,
+    cableHoleAtEnds: params.cableHoleAtEnds,
   };
   return new Promise((resolve, reject) => {
     const handler = (ev: MessageEvent<WorkerResponse>) => {

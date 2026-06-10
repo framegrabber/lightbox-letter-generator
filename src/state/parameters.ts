@@ -20,9 +20,14 @@ export type Parameters = {
   bridgeY: number;
   plexiTolerance: number;
   backCavityDepth: number;
+  cableHoleDiameter: number;
+  cableHoleY: number;
+  cableHoleZ: number;
+  cableHoleAtEnds: boolean;
 };
 
 const DEFAULT_LETTER_HEIGHT = 200;
+export const DEFAULT_BACK_CAVITY_DEPTH = 20;
 
 export const DEFAULT_PARAMETERS: Parameters = {
   text: "BURGER",
@@ -39,7 +44,11 @@ export const DEFAULT_PARAMETERS: Parameters = {
   bridgeHeight: 0,
   bridgeY: DEFAULT_LETTER_HEIGHT / 2,
   plexiTolerance: 0.1,
-  backCavityDepth: 20,
+  backCavityDepth: DEFAULT_BACK_CAVITY_DEPTH,
+  cableHoleDiameter: 0,
+  cableHoleY: DEFAULT_LETTER_HEIGHT / 2,
+  cableHoleZ: DEFAULT_BACK_CAVITY_DEPTH / 2,
+  cableHoleAtEnds: true,
 };
 
 type Store = Parameters & { set: (p: Partial<Parameters>) => void };

@@ -74,5 +74,15 @@ export function validate(p: Parameters): ValidationResult {
     errors.push({ field: "backCavityDepth", message: "Back cavity depth must be ≥ 0" });
   }
 
+  if (!Number.isFinite(p.cableHoleDiameter) || p.cableHoleDiameter < 0) {
+    errors.push({ field: "cableHoleDiameter", message: "Cable hole diameter must be ≥ 0" });
+  }
+  if (!Number.isFinite(p.cableHoleY)) {
+    errors.push({ field: "cableHoleY", message: "Cable hole Y must be a finite number" });
+  }
+  if (!Number.isFinite(p.cableHoleZ)) {
+    errors.push({ field: "cableHoleZ", message: "Cable hole Z must be a finite number" });
+  }
+
   return errors.length === 0 ? { ok: true } : { ok: false, errors };
 }

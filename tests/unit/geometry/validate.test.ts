@@ -66,6 +66,10 @@ describe("connected-letters bounds", () => {
     bridgeY: -50,
     plexiTolerance: 0.2,
     backCavityDepth: 20,
+    cableHoleDiameter: 0,
+    cableHoleY: 50,
+    cableHoleZ: 10,
+    cableHoleAtEnds: true,
   };
 
   it("accepts zero defaults", () => {
@@ -116,6 +120,10 @@ describe("plexiTolerance bounds", () => {
     bridgeY: 50,
     plexiTolerance: 0.2,
     backCavityDepth: 20,
+    cableHoleDiameter: 0,
+    cableHoleY: 50,
+    cableHoleZ: 10,
+    cableHoleAtEnds: true,
   };
 
   it("accepts the default", () => {
@@ -162,6 +170,10 @@ describe("backCavityDepth bounds", () => {
     bridgeY: 50,
     plexiTolerance: 0.1,
     backCavityDepth: 20,
+    cableHoleDiameter: 0,
+    cableHoleY: 50,
+    cableHoleZ: 10,
+    cableHoleAtEnds: true,
   };
 
   it("accepts the default", () => {
@@ -178,5 +190,51 @@ describe("backCavityDepth bounds", () => {
 
   it("rejects non-finite", () => {
     expect(validate({ ...base, backCavityDepth: NaN }).ok).toBe(false);
+  });
+});
+
+describe("cableHole bounds", () => {
+  const base = {
+    text: "ABC",
+    fontSource: { kind: "bundled" as const, id: "anton" },
+    letterHeight: 100,
+    wallThickness: 10,
+    totalDepth: 50,
+    backThickness: 2,
+    rabbetDepth: 5,
+    insetWidth: 5,
+    bezierTolerance: 0.1,
+    letterOverlap: 0,
+    bridgeWidth: 0,
+    bridgeHeight: 0,
+    bridgeY: 50,
+    plexiTolerance: 0.1,
+    backCavityDepth: 20,
+    cableHoleDiameter: 0,
+    cableHoleY: 50,
+    cableHoleZ: 10,
+    cableHoleAtEnds: true,
+  };
+
+  it("accepts the disabled default", () => {
+    expect(validate(base).ok).toBe(true);
+  });
+
+  it("accepts an enabled diameter with sensible Y/Z", () => {
+    expect(validate({ ...base, cableHoleDiameter: 8 }).ok).toBe(true);
+  });
+
+  it("rejects negative cableHoleDiameter", () => {
+    expect(validate({ ...base, cableHoleDiameter: -1 }).ok).toBe(false);
+  });
+
+  it("rejects non-finite cableHoleDiameter / Y / Z", () => {
+    expect(validate({ ...base, cableHoleDiameter: NaN }).ok).toBe(false);
+    expect(validate({ ...base, cableHoleY: NaN }).ok).toBe(false);
+    expect(validate({ ...base, cableHoleZ: NaN }).ok).toBe(false);
+  });
+
+  it("accepts arbitrary finite cableHoleY / Z (no upper bounds)", () => {
+    expect(validate({ ...base, cableHoleY: -200, cableHoleZ: 500 }).ok).toBe(true);
   });
 });

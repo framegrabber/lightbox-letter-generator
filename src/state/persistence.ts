@@ -40,6 +40,21 @@ export function migrate(raw: Record<string, unknown>): Partial<Parameters> {
     out.backCavityDepth = DEFAULT_PARAMETERS.backCavityDepth;
   }
 
+  if (typeof out.cableHoleDiameter !== "number") {
+    out.cableHoleDiameter = DEFAULT_PARAMETERS.cableHoleDiameter;
+  }
+  if (typeof out.cableHoleY !== "number") {
+    const lh = typeof out.letterHeight === "number" ? out.letterHeight : DEFAULT_PARAMETERS.letterHeight;
+    out.cableHoleY = lh / 2;
+  }
+  if (typeof out.cableHoleZ !== "number") {
+    const bcd = typeof out.backCavityDepth === "number" ? out.backCavityDepth : DEFAULT_PARAMETERS.backCavityDepth;
+    out.cableHoleZ = bcd / 2;
+  }
+  if (typeof out.cableHoleAtEnds !== "boolean") {
+    out.cableHoleAtEnds = DEFAULT_PARAMETERS.cableHoleAtEnds;
+  }
+
   return out as Partial<Parameters>;
 }
 
@@ -83,6 +98,10 @@ export function initPersistence(): void {
       bridgeY: state.bridgeY,
       plexiTolerance: state.plexiTolerance,
       backCavityDepth: state.backCavityDepth,
+      cableHoleDiameter: state.cableHoleDiameter,
+      cableHoleY: state.cableHoleY,
+      cableHoleZ: state.cableHoleZ,
+      cableHoleAtEnds: state.cableHoleAtEnds,
     };
     const json = JSON.stringify(ser);
     try {

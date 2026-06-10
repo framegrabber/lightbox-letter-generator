@@ -23,6 +23,10 @@ describe("parameters store", () => {
     expect(state.bridgeY).toBe(100); // letterHeight / 2 (mid-letter; letters span Y=[0, letterHeight])
     expect(state.plexiTolerance).toBe(0.1);
     expect(state.backCavityDepth).toBe(20);
+    expect(state.cableHoleDiameter).toBe(0);
+    expect(state.cableHoleY).toBe(100); // letterHeight / 2
+    expect(state.cableHoleZ).toBe(10);  // backCavityDepth / 2
+    expect(state.cableHoleAtEnds).toBe(true);
   });
 
   it("updates a single field via set", () => {

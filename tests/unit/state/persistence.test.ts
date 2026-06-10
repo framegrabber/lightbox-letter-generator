@@ -93,4 +93,56 @@ describe("persistence migrate", () => {
     const out = migrate({ letterHeight: 200, backCavityDepth: 0 });
     expect(out.backCavityDepth).toBe(0);
   });
+
+  it("fills cableHoleDiameter default when missing", () => {
+    const out = migrate({ letterHeight: 200 });
+    expect(out.cableHoleDiameter).toBe(0);
+  });
+
+  it("preserves an existing cableHoleDiameter value (including the default 0)", () => {
+    const out = migrate({ letterHeight: 200, cableHoleDiameter: 8 });
+    expect(out.cableHoleDiameter).toBe(8);
+    const zero = migrate({ letterHeight: 200, cableHoleDiameter: 0 });
+    expect(zero.cableHoleDiameter).toBe(0);
+  });
+
+  it("fills cableHoleY from letterHeight / 2 when missing", () => {
+    const out = migrate({ letterHeight: 80 });
+    expect(out.cableHoleY).toBe(40);
+  });
+
+  it("falls back to default letterHeight / 2 for cableHoleY when both are missing", () => {
+    const out = migrate({});
+    expect(out.cableHoleY).toBe(100);
+  });
+
+  it("preserves an explicit cableHoleY", () => {
+    const out = migrate({ letterHeight: 200, cableHoleY: 25 });
+    expect(out.cableHoleY).toBe(25);
+  });
+
+  it("fills cableHoleZ from backCavityDepth / 2 when missing", () => {
+    const out = migrate({ letterHeight: 200, backCavityDepth: 30 });
+    expect(out.cableHoleZ).toBe(15);
+  });
+
+  it("falls back to default backCavityDepth / 2 for cableHoleZ when both are missing", () => {
+    const out = migrate({});
+    expect(out.cableHoleZ).toBe(10);
+  });
+
+  it("preserves an explicit cableHoleZ", () => {
+    const out = migrate({ letterHeight: 200, cableHoleZ: 5 });
+    expect(out.cableHoleZ).toBe(5);
+  });
+
+  it("fills cableHoleAtEnds default (true) when missing", () => {
+    const out = migrate({ letterHeight: 200 });
+    expect(out.cableHoleAtEnds).toBe(true);
+  });
+
+  it("preserves cableHoleAtEnds: false (falsy boolean)", () => {
+    const out = migrate({ letterHeight: 200, cableHoleAtEnds: false });
+    expect(out.cableHoleAtEnds).toBe(false);
+  });
 });
