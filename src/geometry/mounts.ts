@@ -59,7 +59,7 @@ export function computeMounts(
 
   const shank = params.mountShankDiameter;
   const head = 2 * shank;
-  const slotLength = 4 * shank;
+  const slotLength = 2 * shank;
   const y = params.mountSlotY;
 
   const leftSlotX = slice.minX + params.mountSlotXInset;

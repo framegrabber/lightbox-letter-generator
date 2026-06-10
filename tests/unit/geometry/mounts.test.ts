@@ -54,11 +54,11 @@ describe("computeMounts", () => {
     expect(xs).toEqual([25, 75]);
   });
 
-  it("derives headDiameter = 2 × shank and slotLength = 4 × shank", () => {
+  it("derives headDiameter = 2 × shank and slotLength = 2 × shank", () => {
     const out = computeMounts(SQUARE, baseParams);
     expect(out.slots[0].shankDiameter).toBe(4);
     expect(out.slots[0].headDiameter).toBe(8);
-    expect(out.slots[0].slotLength).toBe(16);
+    expect(out.slots[0].slotLength).toBe(8);
   });
 
   it("returns empty tabs when backCavityDepth = 0 (flat-back)", () => {
@@ -74,11 +74,11 @@ describe("computeMounts", () => {
 
   it("tab Y brackets the keyhole shape with 2mm margin", () => {
     const out = computeMounts(SQUARE, baseParams);
-    // headDiameter = 8, slotLength = 16, slotY = 150
-    // Y range: [slotY − slotLength − headDiameter/2 − 2, slotY + 2] = [128, 152]
-    expect(out.tabs[0].minY).toBe(128);
+    // headDiameter = 8, slotLength = 8, slotY = 150
+    // Y range: [slotY − slotLength − headDiameter/2 − 2, slotY + 2] = [136, 152]
+    expect(out.tabs[0].minY).toBe(136);
     expect(out.tabs[0].maxY).toBe(152);
-    expect(out.tabs[1].minY).toBe(128);
+    expect(out.tabs[1].minY).toBe(136);
     expect(out.tabs[1].maxY).toBe(152);
   });
 

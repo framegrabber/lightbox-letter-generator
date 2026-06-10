@@ -105,7 +105,7 @@ If a bridge sits at the same Y/Z as a cable hole, the cylinder pierces the bridg
 
 ## Mounting
 
-`mountShankDiameter`, `mountSlotY`, `mountSlotXInset` (in `state/parameters.ts`) drive the keyhole-mount step. Default `mountShankDiameter = 0` disables the feature; geometry is unchanged. `headDiameter = 2 × shank` and `slotLength = 4 × shank` are derived in `mounts.ts` and never stored.
+`mountShankDiameter`, `mountSlotY`, `mountSlotXInset` (in `state/parameters.ts`) drive the keyhole-mount step. Default `mountShankDiameter = 0` disables the feature; geometry is unchanged. `headDiameter = 2 × shank` and `slotLength = 2 × shank` are derived in `mounts.ts` and never stored.
 
 `src/geometry/mounts.ts` is a pure helper: given the component's merged contours and mount params, it returns a `MountPlan` of two slots (one per side) and zero or two tabs. Slot X positions come from `xExtentAtY(contours, mountSlotY)` (imported from `cable-holes.ts`) — the slice's `minX + xInset` and `maxX − xInset`. Bbox-based positioning would put a slot in air for tapering letters (V, A) at high Y values where the actual material is narrow; the slice picks the real wall positions.
 

@@ -55,7 +55,7 @@ Added to `Parameters` in `src/state/parameters.ts`:
 **Derived (computed in geometry, never stored):**
 
 - `headDiameter = 2 × shankDiameter`
-- `slotLength = 4 × shankDiameter`
+- `slotLength = 2 × shankDiameter`
 
 A typical `mountShankDiameter = 4` (for a #6/#8 wood screw) yields head opening = 8 mm, slot length = 16 mm. Total keyhole Y extent = `slotLength + headDiameter = 24 mm`. Future scope: expose head/slot params if 2× / 4× ratios prove restrictive.
 
@@ -108,7 +108,7 @@ Per-component logic:
 
 1. If `mountShankDiameter <= 0` → return `{ slots: [], tabs: [] }`.
 2. Compute `slice = xExtentAtY(mergedContours, mountSlotY)`. If null (slotY outside the contour's Y range), return `{ slots: [], tabs: [] }`.
-3. Derived: `headDiameter = 2 * shank`, `slotLength = 4 * shank`.
+3. Derived: `headDiameter = 2 * shank`, `slotLength = 2 * shank`.
 4. Two slots:
    - `leftSlot.x = slice.minX + mountSlotXInset`
    - `rightSlot.x = slice.maxX − mountSlotXInset`
@@ -323,7 +323,7 @@ New `tests/unit/geometry/mounts.test.ts`:
 
 - `mountShankDiameter = 0` → `{ slots: [], tabs: [] }`.
 - Two slots emitted at `bbox.minX + xInset` and `bbox.maxX - xInset`, both at `mountSlotY`.
-- Derived `headDiameter = 2 × shank` and `slotLength = 4 × shank` exposed on each `MountSlot`.
+- Derived `headDiameter = 2 × shank` and `slotLength = 2 × shank` exposed on each `MountSlot`.
 - `backCavityDepth = 0` → `tabs.length === 0`.
 - `backCavityDepth > 0` → `tabs.length === 2`. Each tab is `(headDiameter + 4) × (slotLength + headDiameter + 4)` mm, centered on its slot's X and bracketing the keyhole's Y.
 - Tab Z range = `[max(0, backCavityDepth - backThickness), backCavityDepth]`. Test the clamp: `backCavityDepth = 1, backThickness = 2 → zBottom = 0`.
