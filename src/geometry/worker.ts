@@ -5,6 +5,7 @@ import { capHeightScale } from "./scale";
 import { layoutWord } from "./layout";
 import { mergeIntoComponents } from "./merge";
 import { computeCableHoles } from "./cable-holes";
+import { computeMounts } from "./mounts";
 import { buildLetterShell, buildLetterPlexi, centerMeshXY } from "./shell";
 import { buildLetterLayers } from "../exporters/svg";
 import type { GlyphContours } from "./types";
@@ -76,6 +77,15 @@ ctx.onmessage = async (ev: MessageEvent<WorkerRequest>) => {
       return holeMaxX >= comp.bbox.minX && holeMinX <= comp.bbox.maxX;
     });
 
+    const componentMounts = computeMounts(comp.bbox, {
+      mountShankDiameter: req.params.mountShankDiameter,
+      mountSlotY: req.params.mountSlotY,
+      mountSlotXInset: req.params.mountSlotXInset,
+      wallThickness: req.params.wallThickness,
+      backThickness: req.params.backThickness,
+      backCavityDepth: req.params.backCavityDepth,
+    });
+
     const meshResult = await buildLetterShell({
       contours: comp.mergedContours,
       totalDepth: req.params.totalDepth,
@@ -85,6 +95,7 @@ ctx.onmessage = async (ev: MessageEvent<WorkerRequest>) => {
       insetWidth: req.params.insetWidth,
       backCavityDepth: req.params.backCavityDepth,
       cableHoles: componentCableHoles,
+      mounts: componentMounts.slots.length > 0 ? componentMounts : undefined,
     });
 
     if (!meshResult.ok) {
