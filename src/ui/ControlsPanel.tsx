@@ -187,6 +187,34 @@ export function ControlsPanel() {
         </label>
       </fieldset>
 
+      <fieldset>
+        <legend>Mounting</legend>
+        <NumberField
+          label="Mount shank diameter"
+          unit="mm"
+          value={params.mountShankDiameter}
+          onChange={(v) => params.set({ mountShankDiameter: v })}
+          error={errorFor(errs, "mountShankDiameter")}
+          step={0.5}
+        />
+        <NumberField
+          label="Mount slot Y"
+          unit="mm"
+          value={params.mountSlotY}
+          onChange={(v) => params.set({ mountSlotY: v })}
+          error={errorFor(errs, "mountSlotY")}
+          step={1}
+        />
+        <NumberField
+          label="Mount slot X inset"
+          unit="mm"
+          value={params.mountSlotXInset}
+          onChange={(v) => params.set({ mountSlotXInset: v })}
+          error={errorFor(errs, "mountSlotXInset")}
+          step={1}
+        />
+      </fieldset>
+
       <details>
         <summary>Advanced</summary>
         <NumberField
