@@ -82,6 +82,9 @@ export function usePreviewBuild() {
     params.cableHoleY,
     params.cableHoleZ,
     params.cableHoleAtEnds,
+    params.mountShankDiameter,
+    params.mountSlotY,
+    params.mountSlotXInset,
   ]);
 
   return { result, busy, layoutFont };

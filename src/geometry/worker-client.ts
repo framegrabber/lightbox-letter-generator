@@ -77,6 +77,9 @@ export function build(params: Parameters, fontBuffer: ArrayBuffer): Promise<Buil
     cableHoleY: params.cableHoleY,
     cableHoleZ: params.cableHoleZ,
     cableHoleAtEnds: params.cableHoleAtEnds,
+    mountShankDiameter: params.mountShankDiameter,
+    mountSlotY: params.mountSlotY,
+    mountSlotXInset: params.mountSlotXInset,
   };
   return new Promise((resolve, reject) => {
     const handler = (ev: MessageEvent<WorkerResponse>) => {

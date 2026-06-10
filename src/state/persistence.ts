@@ -55,6 +55,18 @@ export function migrate(raw: Record<string, unknown>): Partial<Parameters> {
     out.cableHoleAtEnds = DEFAULT_PARAMETERS.cableHoleAtEnds;
   }
 
+  if (typeof out.mountShankDiameter !== "number") {
+    out.mountShankDiameter = DEFAULT_PARAMETERS.mountShankDiameter;
+  }
+  if (typeof out.mountSlotY !== "number") {
+    const lh = typeof out.letterHeight === "number" ? out.letterHeight : DEFAULT_PARAMETERS.letterHeight;
+    out.mountSlotY = lh * 0.75;
+  }
+  if (typeof out.mountSlotXInset !== "number") {
+    const wt = typeof out.wallThickness === "number" ? out.wallThickness : DEFAULT_PARAMETERS.wallThickness;
+    out.mountSlotXInset = wt * 2;
+  }
+
   return out as Partial<Parameters>;
 }
 
@@ -102,6 +114,9 @@ export function initPersistence(): void {
       cableHoleY: state.cableHoleY,
       cableHoleZ: state.cableHoleZ,
       cableHoleAtEnds: state.cableHoleAtEnds,
+      mountShankDiameter: state.mountShankDiameter,
+      mountSlotY: state.mountSlotY,
+      mountSlotXInset: state.mountSlotXInset,
     };
     const json = JSON.stringify(ser);
     try {

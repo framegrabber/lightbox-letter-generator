@@ -145,4 +145,46 @@ describe("persistence migrate", () => {
     const out = migrate({ letterHeight: 200, cableHoleAtEnds: false });
     expect(out.cableHoleAtEnds).toBe(false);
   });
+
+  it("fills mountShankDiameter default when missing", () => {
+    const out = migrate({ letterHeight: 200 });
+    expect(out.mountShankDiameter).toBe(0);
+  });
+
+  it("preserves an existing mountShankDiameter value (including 0)", () => {
+    const out = migrate({ letterHeight: 200, mountShankDiameter: 4 });
+    expect(out.mountShankDiameter).toBe(4);
+    const zero = migrate({ letterHeight: 200, mountShankDiameter: 0 });
+    expect(zero.mountShankDiameter).toBe(0);
+  });
+
+  it("fills mountSlotY from letterHeight × 0.75 when missing", () => {
+    const out = migrate({ letterHeight: 80 });
+    expect(out.mountSlotY).toBe(60);
+  });
+
+  it("falls back to default letterHeight × 0.75 for mountSlotY when both are missing", () => {
+    const out = migrate({});
+    expect(out.mountSlotY).toBe(150);
+  });
+
+  it("preserves an explicit mountSlotY", () => {
+    const out = migrate({ letterHeight: 200, mountSlotY: 25 });
+    expect(out.mountSlotY).toBe(25);
+  });
+
+  it("fills mountSlotXInset from wallThickness × 2 when missing", () => {
+    const out = migrate({ wallThickness: 6 });
+    expect(out.mountSlotXInset).toBe(12);
+  });
+
+  it("falls back to default wallThickness × 2 for mountSlotXInset when both are missing", () => {
+    const out = migrate({});
+    expect(out.mountSlotXInset).toBe(20);
+  });
+
+  it("preserves an explicit mountSlotXInset", () => {
+    const out = migrate({ wallThickness: 10, mountSlotXInset: 30 });
+    expect(out.mountSlotXInset).toBe(30);
+  });
 });

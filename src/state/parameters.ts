@@ -24,16 +24,20 @@ export type Parameters = {
   cableHoleY: number;
   cableHoleZ: number;
   cableHoleAtEnds: boolean;
+  mountShankDiameter: number;
+  mountSlotY: number;
+  mountSlotXInset: number;
 };
 
 const DEFAULT_LETTER_HEIGHT = 200;
+const DEFAULT_WALL_THICKNESS = 10;
 export const DEFAULT_BACK_CAVITY_DEPTH = 20;
 
 export const DEFAULT_PARAMETERS: Parameters = {
   text: "BURGER",
   fontSource: { kind: "bundled", id: "anton" },
   letterHeight: DEFAULT_LETTER_HEIGHT,
-  wallThickness: 10,
+  wallThickness: DEFAULT_WALL_THICKNESS,
   totalDepth: 100,
   backThickness: 2,
   rabbetDepth: 5,
@@ -49,6 +53,9 @@ export const DEFAULT_PARAMETERS: Parameters = {
   cableHoleY: DEFAULT_LETTER_HEIGHT / 2,
   cableHoleZ: DEFAULT_BACK_CAVITY_DEPTH / 2,
   cableHoleAtEnds: true,
+  mountShankDiameter: 0,
+  mountSlotY: DEFAULT_LETTER_HEIGHT * 0.75,
+  mountSlotXInset: DEFAULT_WALL_THICKNESS * 2,
 };
 
 type Store = Parameters & { set: (p: Partial<Parameters>) => void };

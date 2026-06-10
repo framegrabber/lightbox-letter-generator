@@ -70,6 +70,9 @@ describe("connected-letters bounds", () => {
     cableHoleY: 50,
     cableHoleZ: 10,
     cableHoleAtEnds: true,
+    mountShankDiameter: 0,
+    mountSlotY: 75,
+    mountSlotXInset: 20,
   };
 
   it("accepts zero defaults", () => {
@@ -124,6 +127,9 @@ describe("plexiTolerance bounds", () => {
     cableHoleY: 50,
     cableHoleZ: 10,
     cableHoleAtEnds: true,
+    mountShankDiameter: 0,
+    mountSlotY: 75,
+    mountSlotXInset: 20,
   };
 
   it("accepts the default", () => {
@@ -174,6 +180,9 @@ describe("backCavityDepth bounds", () => {
     cableHoleY: 50,
     cableHoleZ: 10,
     cableHoleAtEnds: true,
+    mountShankDiameter: 0,
+    mountSlotY: 75,
+    mountSlotXInset: 20,
   };
 
   it("accepts the default", () => {
@@ -214,6 +223,9 @@ describe("cableHole bounds", () => {
     cableHoleY: 50,
     cableHoleZ: 10,
     cableHoleAtEnds: true,
+    mountShankDiameter: 0,
+    mountSlotY: 75,
+    mountSlotXInset: 20,
   };
 
   it("accepts the disabled default", () => {
@@ -236,5 +248,63 @@ describe("cableHole bounds", () => {
 
   it("accepts arbitrary finite cableHoleY / Z (no upper bounds)", () => {
     expect(validate({ ...base, cableHoleY: -200, cableHoleZ: 500 }).ok).toBe(true);
+  });
+});
+
+describe("mount bounds", () => {
+  const base = {
+    text: "ABC",
+    fontSource: { kind: "bundled" as const, id: "anton" },
+    letterHeight: 100,
+    wallThickness: 10,
+    totalDepth: 50,
+    backThickness: 2,
+    rabbetDepth: 5,
+    insetWidth: 5,
+    bezierTolerance: 0.1,
+    letterOverlap: 0,
+    bridgeWidth: 0,
+    bridgeHeight: 0,
+    bridgeY: 50,
+    plexiTolerance: 0.1,
+    backCavityDepth: 20,
+    cableHoleDiameter: 0,
+    cableHoleY: 50,
+    cableHoleZ: 10,
+    cableHoleAtEnds: true,
+    mountShankDiameter: 0,
+    mountSlotY: 75,
+    mountSlotXInset: 20,
+  };
+
+  it("accepts the disabled default", () => {
+    expect(validate(base).ok).toBe(true);
+  });
+
+  it("accepts an enabled shank diameter with sensible Y/inset", () => {
+    expect(validate({ ...base, mountShankDiameter: 4 }).ok).toBe(true);
+  });
+
+  it("rejects negative mountShankDiameter", () => {
+    expect(validate({ ...base, mountShankDiameter: -1 }).ok).toBe(false);
+  });
+
+  it("rejects non-finite mount fields", () => {
+    expect(validate({ ...base, mountShankDiameter: NaN }).ok).toBe(false);
+    expect(validate({ ...base, mountSlotY: NaN }).ok).toBe(false);
+    expect(validate({ ...base, mountSlotXInset: NaN }).ok).toBe(false);
+  });
+
+  it("rejects mountSlotXInset = 0", () => {
+    expect(validate({ ...base, mountSlotXInset: 0 }).ok).toBe(false);
+  });
+
+  it("rejects negative mountSlotXInset", () => {
+    expect(validate({ ...base, mountSlotXInset: -5 }).ok).toBe(false);
+  });
+
+  it("accepts arbitrary finite mountSlotY (no upper bound)", () => {
+    expect(validate({ ...base, mountSlotY: -200 }).ok).toBe(true);
+    expect(validate({ ...base, mountSlotY: 9999 }).ok).toBe(true);
   });
 });

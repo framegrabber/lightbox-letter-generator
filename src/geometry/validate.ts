@@ -84,5 +84,15 @@ export function validate(p: Parameters): ValidationResult {
     errors.push({ field: "cableHoleZ", message: "Cable hole Z must be a finite number" });
   }
 
+  if (!Number.isFinite(p.mountShankDiameter) || p.mountShankDiameter < 0) {
+    errors.push({ field: "mountShankDiameter", message: "Mount shank diameter must be ≥ 0" });
+  }
+  if (!Number.isFinite(p.mountSlotY)) {
+    errors.push({ field: "mountSlotY", message: "Mount slot Y must be a finite number" });
+  }
+  if (!Number.isFinite(p.mountSlotXInset) || p.mountSlotXInset <= 0) {
+    errors.push({ field: "mountSlotXInset", message: "Mount slot X inset must be > 0" });
+  }
+
   return errors.length === 0 ? { ok: true } : { ok: false, errors };
 }

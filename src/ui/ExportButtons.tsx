@@ -32,6 +32,9 @@ function buildReproduceUrl(params: Parameters): string {
     cableHoleY: params.cableHoleY,
     cableHoleZ: params.cableHoleZ,
     cableHoleAtEnds: params.cableHoleAtEnds,
+    mountShankDiameter: params.mountShankDiameter,
+    mountSlotY: params.mountSlotY,
+    mountSlotXInset: params.mountSlotXInset,
   };
   const url = new URL(window.location.origin + window.location.pathname);
   url.searchParams.set("p", JSON.stringify(serializable));

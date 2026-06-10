@@ -27,6 +27,9 @@ describe("parameters store", () => {
     expect(state.cableHoleY).toBe(100); // letterHeight / 2
     expect(state.cableHoleZ).toBe(10);  // backCavityDepth / 2
     expect(state.cableHoleAtEnds).toBe(true);
+    expect(state.mountShankDiameter).toBe(0);
+    expect(state.mountSlotY).toBe(150); // letterHeight × 0.75
+    expect(state.mountSlotXInset).toBe(20); // wallThickness × 2
   });
 
   it("updates a single field via set", () => {
