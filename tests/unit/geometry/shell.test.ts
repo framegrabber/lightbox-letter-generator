@@ -54,11 +54,12 @@ describe("buildLetterShell", () => {
     if (!result.ok) expect(result.reason).toBe("offset_collapsed");
   }, 30_000);
 
-  it("produces a rabbet step (vertices at totalDepth - rabbetDepth) for 'M'", async () => {
+  it("produces a rabbet step (vertices at top - rabbetDepth) for 'M'", async () => {
     const result = await buildLetterShell({ ...baseInputs, contours: contoursFor("M") });
     expect(result.ok).toBe(true);
     if (!result.ok) return;
-    const expectedShelfZ = baseInputs.totalDepth - baseInputs.rabbetDepth; // 25 - 3 = 22
+    const top = baseInputs.totalDepth + baseInputs.backCavityDepth; // 25 + 0 = 25
+    const expectedShelfZ = top - baseInputs.rabbetDepth; // 25 - 3 = 22
     let found = false;
     const v = result.mesh.vertProperties;
     for (let i = 2; i < v.length; i += 3) {
@@ -162,5 +163,17 @@ describe("buildLetterShell with backCavityDepth", () => {
     const { minZ, maxZ } = meshZBbox(result.mesh);
     expect(minZ).toBeCloseTo(0, 4);
     expect(maxZ).toBeCloseTo(45, 4); // totalDepth(25) + backCavityDepth(20)
+    // Verify the rear cavity was actually carved: the internal panel top sits
+    // at Z = backCavityDepth (= 20). Vertices at that Z only exist when the
+    // rear cavity subtraction ran — without it, the inside of the perimeter
+    // wall is solid material from Z=0 to the front cavity floor at Z=22.
+    let foundPanelTop = false;
+    for (let i = 2; i < result.mesh.vertProperties.length; i += 3) {
+      if (Math.abs(result.mesh.vertProperties[i] - 20) < 0.01) {
+        foundPanelTop = true;
+        break;
+      }
+    }
+    expect(foundPanelTop).toBe(true);
   }, 30_000);
 });

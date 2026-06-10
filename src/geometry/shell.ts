@@ -161,7 +161,7 @@ export function centerMeshXY(mesh: { vertProperties: Float32Array; triVerts: Uin
   for (let i = 0; i < v.length; i += 3) {
     out[i] = v[i] - cx;
     out[i + 1] = v[i + 1] - cy;
-    out[i + 2] = v[i + 2]; // Z = 0 at back already from extrusion
+    out[i + 2] = v[i + 2]; // Z = 0 at the lowest face from buildLetterShell's extrusion
   }
   return {
     vertProperties: out,
