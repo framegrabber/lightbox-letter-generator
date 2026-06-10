@@ -37,8 +37,8 @@ Disabled by default (`mountShankDiameter = 0`). With the feature on:
 - For flat-back letters, the keyhole goes through the back panel (Z range `[0, backThickness]`).
 - For open-back letters, the keyhole is cut through a **tab** at the very rear of the letter (Z range `[0, backThickness]`). The tab fuses with the perimeter wall at `mountSlotY` by stretching in X from the slice edge to past the slot. The partition further forward stays solid; the front cavity is untouched.
 - Slot X positions are derived from `xExtentAtY(mergedContours, mountSlotY)` — the X-extent of letter material at the slot's Y, not the bbox. Tapering letters (V, A) at high Y get slots on the actual wall positions.
-- The keyhole has **two stages**: a through-hole (full panel depth) shaped like a stadium-with-bulb (head circle at bottom, narrow slot, small rounded top circle), and a **back-side pocket** recessed only half the panel depth (`backThickness × 0.5`) and wider by `mountShankDiameter` on each side. The pocket gives the screw head clearance during install and a chamfered visual finish.
-- After install, the screw shank rides through the keyhole's narrow slot; the screw head sits in the pocket recess, captured behind the through-hole's narrow portion.
+- The keyhole has **two stages**: a through-hole (full panel depth) shaped like a stadium-with-bulb (head circle at bottom, narrow slot, small rounded top circle), and an **interior-face pocket** recessed half the panel depth (`backThickness × 0.5`) on the letter-interior side (high-Z), wider by `mountShankDiameter` on each side. The pocket gives the screw head clearance after it has passed through the through-hole and a clean visual finish.
+- After install, the screw shank rides through the keyhole's narrow slot; the screw head sits in the pocket recess on the letter-interior side (rear cavity for open-back, front cavity for flat-back), captured behind the through-hole's narrow portion.
 
 For "BAR" with `letterOverlap = 0` (3 components), the user gets 6 keyholes. For a merged "BAR" component (overlap or bridges), the user gets 2 keyholes spanning the full merged piece — slots near the outer edges of B and R, ideal for a long sign.
 
@@ -147,12 +147,14 @@ if (input.mounts && (input.mounts.slots.length > 0 || input.mounts.tabs.length >
     shell = newShell;
   }
 
-  // 2. SUBTRACT through-hole keyholes + back-side pockets.
+  // 2. SUBTRACT through-hole keyholes + interior-face pockets.
   // Both shapes share the same keyhole topology: head circle at the bottom +
   // narrow slot rectangle + small rounded top circle. The through-hole goes
   // all the way through (Z=[0, backThickness]); the pocket is wider by
   // `mountShankDiameter` on each side and recessed only halfway into the
-  // back face (Z=[0, backThickness × 0.5]).
+  // panel from the letter-interior face (Z=[backThickness × 0.5, backThickness]).
+  // The pocket gives the screw head clearance after it has passed through
+  // the through-hole.
   for (const slot of input.mounts.slots) {
     const halfHead = slot.headDiameter / 2;
     const halfShank = slot.shankDiameter / 2;
@@ -177,10 +179,11 @@ if (input.mounts && (input.mounts.slots.length > 0 || input.mounts.tabs.length >
     tHeadPlusSlot.delete(); through.delete();
     shell.delete(); shell = shellMinusThrough;
 
-    // Back pocket — same shape, wider by pocketMargin, recessed half-depth.
+    // Pocket on the letter-interior face — same shape, wider by pocketMargin,
+    // recessed half the panel depth from the high-Z face.
     const pocketMargin = slot.shankDiameter;
     const pocketDepth = input.backThickness * 0.5;
-    const pCenterZ = pocketDepth / 2;
+    const pCenterZ = input.backThickness - pocketDepth / 2;
     const pHead = Manifold.cylinder(pocketDepth, halfHead + pocketMargin, halfHead + pocketMargin, undefined, true);
     const pHeadPos = pHead.translate([slot.x, headCenterY, pCenterZ]);
     const pSlotTop = Manifold.cylinder(pocketDepth, halfShank + pocketMargin, halfShank + pocketMargin, undefined, true);

@@ -155,11 +155,15 @@ export async function buildLetterShell(input: ShellInputs): Promise<ShellMeshRes
       shell.delete();
       shell = shellMinusThrough;
 
-      // --- Back pocket: same keyhole shape, wider by `pocketMargin`, recessed
-      //     half the panel depth on the back face.
+      // --- Pocket on the letter-interior face: same keyhole shape, wider by
+      //     `pocketMargin`, recessed half the panel depth from the high-Z face
+      //     (where the screw head ends up after passing through the through-
+      //     hole). For open-back the head sits in the rear cavity behind the
+      //     tab; for flat-back it sits in the front cavity above the back
+      //     panel. Either way the head clears the panel cleanly.
       const pocketMargin = slot.shankDiameter;
       const pocketDepth = input.backThickness * 0.5;
-      const pCenterZ = pocketDepth / 2;
+      const pCenterZ = input.backThickness - pocketDepth / 2;
       const pHead = Manifold.cylinder(
         pocketDepth,
         halfHead + pocketMargin,
