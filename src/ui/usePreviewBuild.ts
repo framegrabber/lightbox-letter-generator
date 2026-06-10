@@ -76,6 +76,12 @@ export function usePreviewBuild() {
     params.bridgeWidth,
     params.bridgeHeight,
     params.bridgeY,
+    params.plexiTolerance,
+    params.backCavityDepth,
+    params.cableHoleDiameter,
+    params.cableHoleY,
+    params.cableHoleZ,
+    params.cableHoleAtEnds,
   ]);
 
   return { result, busy, layoutFont };
