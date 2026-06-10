@@ -68,6 +68,7 @@ ctx.onmessage = async (ev: MessageEvent<WorkerRequest>) => {
       wallThickness: req.params.wallThickness,
       rabbetDepth: req.params.rabbetDepth,
       insetWidth: req.params.insetWidth,
+      backCavityDepth: req.params.backCavityDepth,
     });
 
     if (!meshResult.ok) {
@@ -84,6 +85,7 @@ ctx.onmessage = async (ev: MessageEvent<WorkerRequest>) => {
       wallThickness: req.params.wallThickness,
       insetWidth: req.params.insetWidth,
       plexiTolerance: req.params.plexiTolerance,
+      backCavityDepth: req.params.backCavityDepth,
     });
     let plexi: { vertProperties: Float32Array; triVerts: Uint32Array } | null = null;
     if (plexiRaw) {
