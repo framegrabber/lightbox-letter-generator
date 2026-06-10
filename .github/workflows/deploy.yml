@@ -13,11 +13,6 @@ concurrency:
   group: pages
   cancel-in-progress: true
 
-# Opt the runner into Node 24 for any actions that still ship Node 20 internals.
-# Removable once all actions below natively target Node 24.
-env:
-  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: "true"
-
 jobs:
   build:
     runs-on: ubuntu-latest
