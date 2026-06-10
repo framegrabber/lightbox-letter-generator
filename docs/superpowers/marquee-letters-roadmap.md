@@ -9,11 +9,11 @@ The reference image: copper channel letters with circular bulbs in a regular pat
 | Sub-project | Status | Spec | Plan |
 |---|---|---|---|
 | A. Open-back / rear cavity | ✅ shipped (2026-06-10) | `specs/2026-06-10-back-cavity-design.md` | `plans/2026-06-10-back-cavity.md` |
+| C. Side-wall pass-through holes | ✅ shipped (2026-06-10) | `specs/2026-06-10-cable-holes-design.md` | `plans/2026-06-10-cable-holes.md` |
 | B. Bulb holes on front face | ⏳ next | — | — |
-| C. Side-wall pass-through holes | ⏳ pending | — | — |
 | D. Mounting features | ⏳ pending | — | — |
 
-Order is sequential: B → C → D. Each builds on what came before, but each is independently shippable.
+Original sequential order was B → C → D. C shipped first by user request; B and D remain. Each is independently shippable.
 
 ---
 
@@ -42,28 +42,9 @@ Order is sequential: B → C → D. Each builds on what came before, but each is
 
 ## Sub-project C — Side-wall pass-through holes between letters
 
-**Goal:** Cylindrical cable channels through the side walls of adjacent letters, aligned so a single cable can run from one letter into the next.
+✅ **Shipped 2026-06-10.** Spec: `docs/superpowers/specs/2026-06-10-cable-holes-design.md`. Plan: `docs/superpowers/plans/2026-06-10-cable-holes.md`.
 
-This is the inverse of the existing **bridges** feature: instead of adding solid material between letters (a bar that connects them), this **removes** material on each side wall (a hole that the cable passes through).
-
-**Open design questions:**
-
-- **Where on the side wall?** A single hole at a fixed Y per letter pair, similar to `bridgeY`, or two holes (one near the top, one near the bottom) for thicker cable bundles?
-- **Hole shape.** Circular (one parameter, `cableHoleDiameter`)? Or rectangular slot (two parameters)?
-- **Alignment between letter pairs.** The hole on letter A's right wall should line up with the hole on letter B's left wall. The Y position is shared. The X position is **the side wall** of each letter — but for connected/merged components there is no side wall between them, so the hole only makes sense at the **leftmost and rightmost letters' outer walls**, plus between **separate components** (and within a component, two letters are already connected via a bridge or overlap). So the hole pairs only land at component boundaries.
-
-  Actually that's wrong on reflection — even between merged letters in the same component, you might want a cable channel through the joining region for an LED strip that runs all the way through. So the hole logic needs to think in terms of "every pair of adjacent visible letters," not "every component boundary."
-
-- **Interaction with bridges.** If letters are bridged (sub-project: connected mode, already shipped), the bridge bar might or might not be where the cable goes. Possibly the cable hole IS through the bridge. Or possibly through the wall above/below the bridge. Probably worth letting the user place the hole independently of the bridge.
-
-- **Open ends at the leftmost/rightmost letter.** The first letter has its left side wall facing nothing; the last letter likewise on its right. Do we put a power-entry hole there too? Probably yes — that's where the cable comes from the wall outlet.
-
-**Likely parameters:**
-- `cableHoleDiameter` (mm). 0 = disabled.
-- `cableHoleY` (mm). Position on the side wall.
-- `cableHoleAtEnds: boolean` — whether to also cut a hole on the leftmost letter's left wall and the rightmost letter's right wall (for power entry/exit). Default true.
-
-**Estimated scope:** small to medium. Per letter, identify the leftmost and rightmost X of the perimeter at the chosen Y. Cut a horizontal cylinder through each side wall at that XY. Worker-side, this happens after the merge stage, on each component's individual letters. ~2–3 tasks.
+Final shape: 4 parameters (`cableHoleDiameter`, `cableHoleY`, `cableHoleZ`, `cableHoleAtEnds`); single circular hole per adjacent non-space letter pair (same adjacency rule as bridges — spaces break the cable channel); optional power-entry cylinders on the leftmost-left and rightmost-right outer walls. Hole X is positioned by the glyph's X-extent at `cableHoleY` (slice, not bbox) so tapering letters like V/U/A get holes in the actual wall material at the chosen height. Cylinder pierces the bridge bar if a bridge happens to share Y/Z — no special-casing.
 
 ---
 
@@ -102,10 +83,10 @@ This is the inverse of the existing **bridges** feature: instead of adding solid
 
 ## Combined-mode acceptance
 
-When B + C + D ship, a user typing "BAR" with marquee defaults should get:
+When B + D ship, a user typing "BAR" with marquee defaults should get:
 - Open-back letters with rear cavity (A) ✓
+- Cable pass-through holes between B-A, A-R, plus power-entry holes on the outside of B and R (C) ✓
 - Bulb holes around the front-face perimeter (B)
-- Cable pass-through holes between B-A, A-R, plus power-entry holes on the outside of B and R (C)
 - Two keyhole slots per letter for wall mounting (D)
 
 The downloaded zip should still cleanly fit on a print bed and a slicer should orient it open-back-down without manual rotation.
