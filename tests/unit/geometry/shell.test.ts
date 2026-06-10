@@ -264,3 +264,123 @@ describe("buildLetterShell with cableHoles", () => {
     expect(zeroDia.mesh.triVerts.length).toBe(noHole.mesh.triVerts.length);
   }, 30_000);
 });
+
+describe("buildLetterShell with mounts", () => {
+  const buf = readFileSync(resolve(__dirname, "../../fixtures/fonts/Inter-Regular.ttf"));
+  const font = opentype.parse(buf.buffer.slice(buf.byteOffset, buf.byteOffset + buf.byteLength));
+
+  function contoursForLetter(ch: string) {
+    const scale = capHeightScale(font, 100);
+    const raw = flattenGlyph(font.charToGlyph(ch), font.unitsPerEm, 0.1);
+    return raw.map((p) => p.map(([x, y]) => [x * scale, y * scale] as [number, number]));
+  }
+
+  function bboxFromContours(contours: ReturnType<typeof contoursForLetter>) {
+    let minX = Infinity, maxX = -Infinity, minY = Infinity, maxY = -Infinity;
+    for (const poly of contours) {
+      for (const [x, y] of poly) {
+        if (x < minX) minX = x;
+        if (x > maxX) maxX = x;
+        if (y < minY) minY = y;
+        if (y > maxY) maxY = y;
+      }
+    }
+    return { minX, maxX, minY, maxY };
+  }
+
+  const baseInputs = {
+    totalDepth: 25,
+    backThickness: 2,
+    wallThickness: 5,
+    rabbetDepth: 3,
+    insetWidth: 3,
+    backCavityDepth: 20,
+  };
+
+  it("mounts undefined produces the same triangle count as omitting the option", async () => {
+    const contours = contoursForLetter("M");
+    const a = await buildLetterShell({ ...baseInputs, contours });
+    const b = await buildLetterShell({ ...baseInputs, contours, mounts: undefined });
+    expect(a.ok && b.ok).toBe(true);
+    if (!a.ok || !b.ok) return;
+    expect(a.mesh.triVerts.length).toBe(b.mesh.triVerts.length);
+  }, 30_000);
+
+  it("an empty MountPlan is a no-op", async () => {
+    const contours = contoursForLetter("M");
+    const a = await buildLetterShell({ ...baseInputs, contours });
+    const b = await buildLetterShell({
+      ...baseInputs,
+      contours,
+      mounts: { slots: [], tabs: [] },
+    });
+    expect(a.ok && b.ok).toBe(true);
+    if (!a.ok || !b.ok) return;
+    expect(a.mesh.triVerts.length).toBe(b.mesh.triVerts.length);
+  }, 30_000);
+
+  it("flat-back: keyhole subtract changes triangle count", async () => {
+    const contours = contoursForLetter("M");
+    const bbox = bboxFromContours(contours);
+    const noMounts = await buildLetterShell({
+      ...baseInputs,
+      contours,
+      backCavityDepth: 0,
+    });
+    expect(noMounts.ok).toBe(true);
+    if (!noMounts.ok) return;
+
+    // Place the slot near the bottom of the M (y=10) so the back panel has
+    // material under the entire keyhole footprint. The midX of M's V valley
+    // is empty space at y=50, so we drop down where M's strokes converge.
+    const slot = {
+      x: (bbox.minX + bbox.maxX) / 2,
+      y: 10,
+      shankDiameter: 2,
+      headDiameter: 4,
+      slotLength: 8,
+    };
+    const withMounts = await buildLetterShell({
+      ...baseInputs,
+      contours,
+      backCavityDepth: 0,
+      mounts: { slots: [slot], tabs: [] },
+    });
+    expect(withMounts.ok).toBe(true);
+    if (!withMounts.ok) return;
+    expect(withMounts.mesh.triVerts.length).not.toBe(noMounts.mesh.triVerts.length);
+  }, 30_000);
+
+  it("open-back: tabs union plus keyhole subtract produces more triangles than baseline", async () => {
+    const contours = contoursForLetter("M");
+    const bbox = bboxFromContours(contours);
+    const noMounts = await buildLetterShell({ ...baseInputs, contours });
+    expect(noMounts.ok).toBe(true);
+    if (!noMounts.ok) return;
+
+    const slotX = (bbox.minX + bbox.maxX) / 2;
+    const slot = {
+      x: slotX,
+      y: 50,
+      shankDiameter: 2,
+      headDiameter: 4,
+      slotLength: 8,
+    };
+    const tab = {
+      minX: slotX - 4,
+      maxX: slotX + 4,
+      minY: 50 - 8 - 2 - 2,
+      maxY: 50 + 2,
+      zBottom: baseInputs.backCavityDepth - baseInputs.backThickness,
+      zTop: baseInputs.backCavityDepth,
+    };
+    const withMounts = await buildLetterShell({
+      ...baseInputs,
+      contours,
+      mounts: { slots: [slot], tabs: [tab] },
+    });
+    expect(withMounts.ok).toBe(true);
+    if (!withMounts.ok) return;
+    expect(withMounts.mesh.triVerts.length).toBeGreaterThan(noMounts.mesh.triVerts.length);
+  }, 30_000);
+});

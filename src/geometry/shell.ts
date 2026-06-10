@@ -1,5 +1,6 @@
 import { getManifold } from "./manifold-init";
 import type { CableHole } from "./cable-holes";
+import type { MountPlan } from "./mounts";
 import type { GlyphContours } from "./types";
 
 export type ShellInputs = {
@@ -11,6 +12,7 @@ export type ShellInputs = {
   insetWidth: number; // shelf width where the plexi rests; lip = wallThickness − insetWidth
   backCavityDepth: number; // hollow cavity behind the back panel; 0 = today's flat-back behavior
   cableHoles?: ReadonlyArray<CableHole>;
+  mounts?: MountPlan;
 };
 
 export type ShellMeshResult =
@@ -90,6 +92,76 @@ export async function buildLetterShell(input: ShellInputs): Promise<ShellMeshRes
       cyl.delete();
       cylX.delete();
       cylPositioned.delete();
+      shell.delete();
+      shell = newShell;
+    }
+  }
+
+  if (input.mounts && (input.mounts.slots.length > 0 || input.mounts.tabs.length > 0)) {
+    const { Manifold } = m;
+
+    // 1. UNION tabs (open-back only — flat-back has empty tabs array).
+    for (const tab of input.mounts.tabs) {
+      const tabSize: [number, number, number] = [
+        tab.maxX - tab.minX,
+        tab.maxY - tab.minY,
+        tab.zTop - tab.zBottom,
+      ];
+      // Manifold.cube(size, false): one corner at origin, opposite at +size.
+      const tabBox = Manifold.cube(tabSize, false);
+      const tabPositioned = tabBox.translate([tab.minX, tab.minY, tab.zBottom]);
+      const newShell = shell.add(tabPositioned);
+      tabBox.delete();
+      tabPositioned.delete();
+      shell.delete();
+      shell = newShell;
+    }
+
+    // 2. SUBTRACT keyhole shapes (head cylinder + shank slot box, unioned).
+    const keyholeBottom = input.backCavityDepth > 0
+      ? Math.max(0, input.backCavityDepth - input.backThickness)
+      : 0;
+    const keyholeTop = input.backCavityDepth > 0
+      ? input.backCavityDepth
+      : input.backThickness;
+    const keyholeHeight = keyholeTop - keyholeBottom;
+    const keyholeCenterZ = (keyholeBottom + keyholeTop) / 2;
+
+    for (const slot of input.mounts.slots) {
+      // Round head opening as a Z-cylinder at (slot.x, slot.y − slotLength).
+      const head = Manifold.cylinder(
+        keyholeHeight,
+        slot.headDiameter / 2,
+        slot.headDiameter / 2,
+        undefined,
+        true,
+      );
+      const headPositioned = head.translate([
+        slot.x,
+        slot.y - slot.slotLength,
+        keyholeCenterZ,
+      ]);
+
+      // Narrow shank slot as a rectangular box from (slot.y − slotLength) to slot.y.
+      const slotBox = Manifold.cube(
+        [slot.shankDiameter, slot.slotLength, keyholeHeight],
+        true,
+      );
+      const slotBoxPositioned = slotBox.translate([
+        slot.x,
+        slot.y - slot.slotLength / 2,
+        keyholeCenterZ,
+      ]);
+
+      // Union head + shank slot, then subtract from shell.
+      const keyhole = headPositioned.add(slotBoxPositioned);
+      const newShell = shell.subtract(keyhole);
+
+      head.delete();
+      headPositioned.delete();
+      slotBox.delete();
+      slotBoxPositioned.delete();
+      keyhole.delete();
       shell.delete();
       shell = newShell;
     }
