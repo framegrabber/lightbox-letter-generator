@@ -57,7 +57,7 @@ describe("persistence migrate", () => {
       wallThickness: 10,
       insetWidth: 5,
     });
-    expect(out.plexiTolerance).toBe(0.2);
+    expect(out.plexiTolerance).toBe(0.1);
   });
 
   it("preserves an existing plexiTolerance value", () => {

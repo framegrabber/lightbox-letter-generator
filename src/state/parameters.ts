@@ -37,7 +37,7 @@ export const DEFAULT_PARAMETERS: Parameters = {
   bridgeWidth: 0,
   bridgeHeight: 0,
   bridgeY: DEFAULT_LETTER_HEIGHT / 2,
-  plexiTolerance: 0.2,
+  plexiTolerance: 0.1,
 };
 
 type Store = Parameters & { set: (p: Partial<Parameters>) => void };
