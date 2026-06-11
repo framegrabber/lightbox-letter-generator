@@ -143,12 +143,12 @@ Local string state lets the user clear the input or type intermediate values lik
 - A drei `<Grid>` (rotated `[Math.PI/2, 0, 0]` so it lands on world XY) with `cellSize` / `sectionSize` derived from the geometry bbox via `src/ui/grid-spacing.ts`'s `pickGridSpacing` (NICE_NUMBERS sequence 1/2/5/10/20/50/100/200/500/1000/2000/5000, target ~5 major lines across `max(bboxX, bboxY)`).
 - Numbered tick labels along the X axis (Y=0) and Y axis (X=0) using drei `<Text>` inside `<Billboard lockX lockY>` — labels rotate around world Z to face the camera azimuth so they read at any orbit angle except strict top-down. Capped at `MAX_TICKS_PER_DIRECTION = 30` per axis.
 - An `mm` legend label at the origin so the unit is unambiguous; the `"0"` tick is suppressed.
-- A drei `<GizmoHelper><GizmoViewcube/></GizmoHelper>` in the top-left for click-to-orient (faces / edges / corners). Distance to target is preserved; only orientation changes.
+- A drei `<GizmoHelper><GizmoViewport/></GizmoHelper>` in the top-left for click-to-orient along an axis (red=X, green=Y, blue=Z arrows). Distance to target is preserved; only orientation changes.
 - A bottom-left `.preview-toolbar` column with the existing Fit button + a new Grid-toggle button.
 
-Both grid and viewcube are gated on `useUI.showGrid` / `useUI.showViewcube` (session-only flags, defaults `true`). Only `showGrid` has a UI toggle button in v1; `showViewcube` exists in the store for a future toggle.
+Both grid and the gizmo are gated on `useUI.showGrid` / `useUI.showViewcube` (session-only flags, defaults `true`). Only `showGrid` has a UI toggle button in v1; `showViewcube` exists in the store for a future toggle. The flag name kept the "viewcube" word for ergonomics even though the actual widget is now the axis-arrow viewport — see Z-up history below.
 
-Known viewer landmine: drei's `<GizmoViewcube>` derives orientation from `camera.up`, which our scene sets to `(0, 0, 1)`. Verify the `"TOP"` face truly looks down +Z when the spec is implemented or revisited; if drei's labels misalign for our Z-up convention, fall back to `<GizmoViewport>` (axis arrows, vector-driven, no labels).
+Z-up history: shipped briefly with `<GizmoViewcube>` (the 26-view widget) but its face labels and rotation paths are baked Y-up — clicking "FRONT" rotated the scene 90° in our Z-up frame and orientation changes took the long way round. Swapped to `<GizmoViewport>` (axis arrows, vector-driven, no labels) which respects `camera.up` correctly. Don't reintroduce the cube without solving the Z-up convention mismatch.
 
 ## Export format
 

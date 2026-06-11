@@ -199,17 +199,16 @@ function AxisTickLabels({ result }: { result: BuildResult | null }) {
 
 `MAX_TICKS_PER_DIRECTION = 30` caps total labels at 60 X + 60 Y = 120 max. Past that range the grid lines continue but labels stop — protects against pathological inputs (5000mm letter generating hundreds of labels).
 
-### `<GizmoHelper>` + `<GizmoViewcube>`
+### `<GizmoHelper>` + `<GizmoViewport>` (shipped) — `<GizmoViewcube>` was the original plan
+
+The plan was `<GizmoViewcube>`, but its face labels and rotation paths are baked Y-up: clicking "FRONT" rotated our Z-up scene 90° and orientation changes took the long way round. Swapped to `<GizmoViewport>` (axis arrows, vector-driven, no labels) per the spec's risk-section fallback.
 
 ```tsx
 {showViewcube && (
   <GizmoHelper alignment="top-left" margin={[64, 64]}>
-    <GizmoViewcube
-      color="#f5f5f5"
-      opacity={0.95}
-      strokeColor="#333"
-      textColor="#222"
-      hoverColor="#7aa6ff"
+    <GizmoViewport
+      axisColors={["#ff5050", "#50c050", "#5070ff"]}
+      labelColor="#222"
     />
   </GizmoHelper>
 )}
@@ -217,7 +216,7 @@ function AxisTickLabels({ result }: { result: BuildResult | null }) {
 
 Top-left placement: away from the bottom-left Fit/Grid toolbar (and errors overlay) and from the top-right camera-HUD / warnings overlays.
 
-drei's `<GizmoViewcube>` is the full 26-view widget: 6 faces, 12 edges, 8 corners. Click any region to animate the camera to that orientation. Distance to target preserved automatically.
+drei's `<GizmoViewport>` shows red/green/blue arrows for the world X/Y/Z axes. Click an arrow to look down that axis. Drag to orbit. Vector-driven so no convention mismatch is possible.
 
 ### Floating toolbar (bottom-left)
 

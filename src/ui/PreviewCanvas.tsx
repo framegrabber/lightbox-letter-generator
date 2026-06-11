@@ -1,5 +1,5 @@
 import { Canvas, useFrame, useThree } from "@react-three/fiber";
-import { OrbitControls, Grid, Text, Billboard, GizmoHelper, GizmoViewcube } from "@react-three/drei";
+import { OrbitControls, Grid, Text, Billboard, GizmoHelper, GizmoViewport } from "@react-three/drei";
 import { useEffect, useMemo, useRef, useState } from "react";
 import * as THREE from "three";
 import { useParameters } from "../state/parameters";
@@ -209,12 +209,9 @@ export function PreviewCanvas() {
         <SceneSetup fitToken={fitToken} />
         {showViewcube && (
           <GizmoHelper alignment="top-left" margin={[64, 64]}>
-            <GizmoViewcube
-              color="#f5f5f5"
-              opacity={0.95}
-              strokeColor="#333"
-              textColor="#222"
-              hoverColor="#7aa6ff"
+            <GizmoViewport
+              axisColors={["#ff5050", "#50c050", "#5070ff"]}
+              labelColor="#222"
             />
           </GizmoHelper>
         )}
