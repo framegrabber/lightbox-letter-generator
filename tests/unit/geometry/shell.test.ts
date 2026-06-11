@@ -4,6 +4,7 @@ import { resolve } from "node:path";
 import opentype from "opentype.js";
 import { buildLetterShell, buildLetterPlexi } from "../../../src/geometry/shell";
 import type { ShellInputs } from "../../../src/geometry/shell";
+import type { BulbHole } from "../../../src/geometry/bulb-holes";
 import { flattenGlyph } from "../../../src/geometry/flatten";
 import { capHeightScale } from "../../../src/geometry/scale";
 
@@ -66,6 +67,22 @@ describe("buildLetterShell", () => {
       if (Math.abs(v[i] - expectedShelfZ) < 0.01) { found = true; break; }
     }
     expect(found).toBe(true);
+  }, 30_000);
+
+  it("subtracts a bulb hole from the back panel of a flat-back letter", async () => {
+    const noHoles = await buildLetterShell({ ...baseInputs, contours: contoursFor("M") });
+    const withHole = await buildLetterShell({
+      ...baseInputs,
+      contours: contoursFor("M"),
+      // Place hole near the centre of the M's bbox; flat-back so back panel = z[0,2].
+      bulbHoles: [{ x: 35, y: 50, diameter: 6 } satisfies BulbHole],
+    });
+    expect(noHoles.ok).toBe(true);
+    expect(withHole.ok).toBe(true);
+    if (noHoles.ok && withHole.ok) {
+      // A single through-hole adds vertices to the mesh; the count must increase.
+      expect(withHole.mesh.vertProperties.length).toBeGreaterThan(noHoles.mesh.vertProperties.length);
+    }
   }, 30_000);
 });
 

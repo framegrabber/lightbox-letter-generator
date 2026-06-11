@@ -1,5 +1,6 @@
 import { getManifold } from "./manifold-init";
 import type { CableHole } from "./cable-holes";
+import type { BulbHole } from "./bulb-holes";
 import type { MountPlan } from "./mounts";
 import type { GlyphContours } from "./types";
 
@@ -12,6 +13,7 @@ export type ShellInputs = {
   insetWidth: number; // shelf width where the plexi rests; lip = wallThickness − insetWidth
   backCavityDepth: number; // hollow cavity behind the back panel; 0 = today's flat-back behavior
   cableHoles?: ReadonlyArray<CableHole>;
+  bulbHoles?: ReadonlyArray<BulbHole>;
   mounts?: MountPlan;
 };
 
@@ -92,6 +94,23 @@ export async function buildLetterShell(input: ShellInputs): Promise<ShellMeshRes
       cyl.delete();
       cylX.delete();
       cylPositioned.delete();
+      shell.delete();
+      shell = newShell;
+    }
+  }
+
+  if (input.bulbHoles && input.bulbHoles.length > 0) {
+    const { Manifold } = m;
+    const eps = 0.01;
+    const length = input.backThickness + 2 * eps;
+    const centerZ = input.backCavityDepth + input.backThickness / 2;
+    for (const hole of input.bulbHoles) {
+      if (hole.diameter <= 0) continue;
+      const cyl = Manifold.cylinder(length, hole.diameter / 2, hole.diameter / 2, undefined, true);
+      const positioned = cyl.translate([hole.x, hole.y, centerZ]);
+      const newShell = shell.subtract(positioned);
+      cyl.delete();
+      positioned.delete();
       shell.delete();
       shell = newShell;
     }
