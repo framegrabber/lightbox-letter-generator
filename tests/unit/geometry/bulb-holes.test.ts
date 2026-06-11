@@ -35,6 +35,34 @@ describe("computeBulbHoles", () => {
     expect(r.warning).toBe("bulbhole_inset_collapsed");
   }, 30_000);
 
+  it("distributes holes between outer + inner rings proportionally", async () => {
+    const ANNULUS: GlyphContours = [
+      [[0, 0], [300, 0], [300, 400], [0, 400]],          // outer CCW
+      [[80, 80], [80, 320], [220, 320], [220, 80]],      // inner counter CW (140 × 240)
+    ];
+    const r = await computeBulbHoles(ANNULUS, baseParams);
+    expect(r.warning).toBeUndefined();
+
+    // Two rings expected; total holes capped at maxCount (12).
+    expect(r.holes.length).toBeGreaterThanOrEqual(11);
+    expect(r.holes.length).toBeLessThanOrEqual(13);
+
+    // Both rings must contribute holes (neither is starved).
+    // Outer ring centerline lies in roughly x ∈ [15..285], y ∈ [15..385].
+    // Inner ring centerline lies in roughly x ∈ [65..235], y ∈ [65..335]
+    // (Round offsets pad the counter centerline a bit beyond the ideal 75..225 / 75..325).
+    // Use the inner ring's bounding rectangle as the discriminator: a hole is on the
+    // INNER ring iff it sits inside that rectangle and away from the outer-ring edges.
+    const onOuterRingEdge = (h: { x: number; y: number }) =>
+      h.x <= 20 || h.x >= 280 || h.y <= 20 || h.y >= 380;
+    const onOuter = r.holes.filter(onOuterRingEdge).length;
+    const onInner = r.holes.length - onOuter;
+    expect(onOuter).toBeGreaterThan(0);
+    expect(onInner).toBeGreaterThan(0);
+    // Outer perimeter is roughly 1.4× inner; outer should get more holes.
+    expect(onOuter).toBeGreaterThanOrEqual(onInner);
+  }, 30_000);
+
   it("places holes evenly along a single-ring cavity", async () => {
     // 100×200 square; wall=5 → cavity 90×190; inset=10 → centerline 70×170.
     // Centerline perimeter = 2*(70+170) = 480 mm.
