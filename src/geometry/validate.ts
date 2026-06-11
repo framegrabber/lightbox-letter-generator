@@ -97,11 +97,13 @@ export function validate(p: Parameters): ValidationResult {
   if (!Number.isFinite(p.bulbHoleDiameter) || p.bulbHoleDiameter < 0) {
     errors.push({ field: "bulbHoleDiameter", message: "Bulb hole diameter must be ≥ 0" });
   }
-  if (!Number.isFinite(p.bulbHoleSpacing) || p.bulbHoleSpacing <= 0) {
-    errors.push({ field: "bulbHoleSpacing", message: "Bulb hole spacing must be > 0" });
-  }
-  if (!Number.isFinite(p.bulbHoleInset) || p.bulbHoleInset <= 0) {
-    errors.push({ field: "bulbHoleInset", message: "Bulb hole inset must be > 0" });
+  if (p.bulbHoleDiameter > 0) {
+    if (!Number.isFinite(p.bulbHoleSpacing) || p.bulbHoleSpacing <= 0) {
+      errors.push({ field: "bulbHoleSpacing", message: "Bulb hole spacing must be > 0" });
+    }
+    if (!Number.isFinite(p.bulbHoleInset) || p.bulbHoleInset <= 0) {
+      errors.push({ field: "bulbHoleInset", message: "Bulb hole inset must be > 0" });
+    }
   }
   if (!Number.isInteger(p.bulbHoleMaxCount) || p.bulbHoleMaxCount < 1) {
     errors.push({ field: "bulbHoleMaxCount", message: "Bulb hole max count must be an integer ≥ 1" });

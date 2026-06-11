@@ -337,15 +337,27 @@ describe("bulbHole bounds", () => {
   });
 
   it("rejects bulbHoleSpacing <= 0", () => {
+    // diameter > 0 enables the feature so spacing/inset checks fire
     const r = validate({ ...DEFAULT_PARAMETERS, bulbHoleSpacing: 0, bulbHoleDiameter: 8 });
     expect(r.ok).toBe(false);
     if (!r.ok) expect(r.errors.find((e) => e.field === "bulbHoleSpacing")).toBeDefined();
   });
 
   it("rejects bulbHoleInset <= 0", () => {
+    // diameter > 0 enables the feature so spacing/inset checks fire
     const r = validate({ ...DEFAULT_PARAMETERS, bulbHoleInset: 0, bulbHoleDiameter: 8 });
     expect(r.ok).toBe(false);
     if (!r.ok) expect(r.errors.find((e) => e.field === "bulbHoleInset")).toBeDefined();
+  });
+
+  it("accepts bulbHoleSpacing = 0 when feature is disabled (diameter = 0)", () => {
+    const r = validate({ ...DEFAULT_PARAMETERS, bulbHoleSpacing: 0 });
+    expect(r.ok).toBe(true);
+  });
+
+  it("accepts bulbHoleInset = 0 when feature is disabled (diameter = 0)", () => {
+    const r = validate({ ...DEFAULT_PARAMETERS, bulbHoleInset: 0 });
+    expect(r.ok).toBe(true);
   });
 
   it("rejects non-integer bulbHoleMaxCount", () => {
