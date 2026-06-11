@@ -98,3 +98,45 @@ test("end-to-end: connected mode merges letters into one STL", async ({ page }) 
     expect(text).toContain("Plexi tolerance:");
   }
 });
+
+test("end-to-end: bulb holes feature on", async ({ page }) => {
+  await page.goto("/");
+
+  await page.getByLabel("Text").fill("H");
+  await page.getByLabel("Letter height").fill("80");
+  await page.getByLabel("Wall thickness").fill("3");
+  await page.getByLabel("Inset width").fill("1.5");
+  // Enable bulb holes; values chosen so the H's strokes get a few holes each.
+  await page.getByLabel("Bulb hole diameter").fill("8");
+  await page.getByLabel("Bulb hole spacing").fill("30");
+  await page.getByLabel("Bulb hole inset").fill("3");
+  await page.getByLabel("Bulb hole max per letter").fill("8");
+
+  const button = page.getByRole("button", { name: /Download/ });
+  await expect(button).toBeEnabled({ timeout: 30_000 });
+
+  const downloadPromise = page.waitForEvent("download");
+  await button.click();
+  const download = await downloadPromise;
+  const path = await download.path();
+  expect(path).toBeTruthy();
+
+  expect(download.suggestedFilename()).toMatch(/^lightbox-H-\d{4}-\d{2}-\d{2}T\d{2}-\d{2}-\d{2}\.zip$/);
+
+  const fs = await import("node:fs/promises");
+  const buf = await fs.readFile(path!);
+  const zip = await JSZip.loadAsync(buf);
+
+  // The shape of the zip is unchanged by the feature.
+  expect(zip.file("stl/chars/01_H_char.stl")).toBeTruthy();
+  expect(zip.file("stl/plexi/01_H_plexi.stl")).toBeTruthy();
+  expect(zip.file("svg/01_H_plexi.svg")).toBeTruthy();
+
+  const readme = zip.file("README.txt");
+  expect(readme).toBeTruthy();
+  if (readme) {
+    const text = await readme.async("text");
+    expect(text).toContain("Bulb hole dia:");
+    expect(text).toContain("8 mm"); // diameter we set
+  }
+});
