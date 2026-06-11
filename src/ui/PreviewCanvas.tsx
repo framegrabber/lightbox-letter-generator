@@ -1,11 +1,85 @@
 import { Canvas, useFrame, useThree } from "@react-three/fiber";
-import { OrbitControls } from "@react-three/drei";
-import { useEffect, useRef, useState } from "react";
+import { OrbitControls, Grid, Text, Billboard } from "@react-three/drei";
+import { useEffect, useMemo, useRef, useState } from "react";
 import * as THREE from "three";
 import { useParameters } from "../state/parameters";
 import { useUI } from "../state/ui";
 import { usePreviewBuildContext } from "./usePreviewBuildContext";
 import { PreviewLetter } from "./PreviewLetter";
+import type { BuildResult } from "../geometry/worker-client";
+import { pickGridSpacing, componentsBBox } from "./grid-spacing";
+
+const MAX_TICKS_PER_DIRECTION = 30;
+const LABEL_SCALE_FRACTION = 0.18;
+
+function AdaptiveGrid({ result }: { result: BuildResult | null }) {
+  const spacing = useMemo(() => {
+    const bbox = result ? componentsBBox(result.components) : null;
+    if (!bbox) return pickGridSpacing(0);
+    const dim = Math.max(bbox.maxX - bbox.minX, bbox.maxY - bbox.minY);
+    return pickGridSpacing(dim);
+  }, [result]);
+
+  return (
+    <Grid
+      args={[10000, 10000]}
+      cellSize={spacing.minor}
+      sectionSize={spacing.major}
+      cellColor="#dcdcdc"
+      sectionColor="#9e9e9e"
+      cellThickness={0.6}
+      sectionThickness={1.0}
+      fadeDistance={Math.max(800, spacing.major * 30)}
+      fadeStrength={1}
+      infiniteGrid
+      followCamera={false}
+      rotation={[Math.PI / 2, 0, 0]}
+      position={[0, 0, 0]}
+    />
+  );
+}
+
+function AxisTickLabels({ result }: { result: BuildResult | null }) {
+  const { spacing, range } = useMemo(() => {
+    const bbox = result ? componentsBBox(result.components) : null;
+    const dim = bbox
+      ? Math.max(bbox.maxX - bbox.minX, bbox.maxY - bbox.minY)
+      : 0;
+    const sp = pickGridSpacing(dim);
+    const r = Math.min(
+      MAX_TICKS_PER_DIRECTION,
+      Math.ceil((Math.max(dim, sp.major * 5) * 1.5) / sp.major),
+    );
+    return { spacing: sp, range: r };
+  }, [result]);
+
+  const labels: { key: string; pos: [number, number, number]; text: string }[] = [];
+  for (let i = -range; i <= range; i++) {
+    if (i === 0) continue;
+    const v = i * spacing.major;
+    labels.push({ key: `x${i}`, pos: [v, -spacing.minor * 1.5, 0], text: String(v) });
+    labels.push({ key: `y${i}`, pos: [-spacing.minor * 1.5, v, 0], text: String(v) });
+  }
+
+  const fontSize = spacing.major * LABEL_SCALE_FRACTION;
+
+  return (
+    <group>
+      {labels.map((l) => (
+        <Billboard key={l.key} position={l.pos} lockX lockY>
+          <Text fontSize={fontSize} color="#666" anchorX="center" anchorY="middle">
+            {l.text}
+          </Text>
+        </Billboard>
+      ))}
+      <Billboard position={[-spacing.minor * 1.5, -spacing.minor * 1.5, 0]} lockX lockY>
+        <Text fontSize={fontSize} color="#444" anchorX="center" anchorY="middle">
+          mm
+        </Text>
+      </Billboard>
+    </group>
+  );
+}
 
 // Auto-fit defaults: where the focal point sits inside the bbox, the camera
 // distance multiplier, and the unit-vector direction from target to camera.
@@ -110,6 +184,7 @@ function CameraHUD({ hudRef }: { hudRef: React.RefObject<HTMLDivElement | null> 
 export function PreviewCanvas() {
   const params = useParameters();
   const showCameraHUD = useUI((s) => s.showCameraHUD);
+  const showGrid = useUI((s) => s.showGrid);
   const { result, busy } = usePreviewBuildContext();
   const [fitToken, setFitToken] = useState(0);
   const hudRef = useRef<HTMLDivElement | null>(null);
@@ -123,10 +198,8 @@ export function PreviewCanvas() {
         <ambientLight intensity={0.55} />
         <directionalLight intensity={1.4} position={[60, -40, 80]} />
         <directionalLight color="#c8d8ee" intensity={0.4} position={[-50, 20, 30]} />
-        <gridHelper
-          args={[1000, 20, "#cfcfcf", "#e5e5e5"]}
-          rotation={[Math.PI / 2, 0, 0]}
-        />
+        {showGrid && <AdaptiveGrid result={result} />}
+        {showGrid && <AxisTickLabels result={result} />}
         <SceneSetup fitToken={fitToken} />
         {showCameraHUD && <CameraHUD hudRef={hudRef} />}
         {result?.components.map((c, i) => (
