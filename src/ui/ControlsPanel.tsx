@@ -215,6 +215,42 @@ export function ControlsPanel() {
         />
       </fieldset>
 
+      <fieldset>
+        <legend>Bulb holes</legend>
+        <NumberField
+          label="Bulb hole diameter"
+          unit="mm"
+          value={params.bulbHoleDiameter}
+          onChange={(v) => params.set({ bulbHoleDiameter: v })}
+          error={errorFor(errs, "bulbHoleDiameter")}
+          step={0.5}
+        />
+        <NumberField
+          label="Bulb hole spacing"
+          unit="mm"
+          value={params.bulbHoleSpacing}
+          onChange={(v) => params.set({ bulbHoleSpacing: v })}
+          error={errorFor(errs, "bulbHoleSpacing")}
+          step={1}
+        />
+        <NumberField
+          label="Bulb hole inset"
+          unit="mm"
+          value={params.bulbHoleInset}
+          onChange={(v) => params.set({ bulbHoleInset: v })}
+          error={errorFor(errs, "bulbHoleInset")}
+          step={1}
+        />
+        <NumberField
+          label="Bulb hole max per letter"
+          unit=""
+          value={params.bulbHoleMaxCount}
+          onChange={(v) => params.set({ bulbHoleMaxCount: v })}
+          error={errorFor(errs, "bulbHoleMaxCount")}
+          step={1}
+        />
+      </fieldset>
+
       <details>
         <summary>Advanced</summary>
         <NumberField
