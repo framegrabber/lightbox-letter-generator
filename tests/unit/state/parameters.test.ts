@@ -42,4 +42,11 @@ describe("parameters store", () => {
     expect(useParameters.getState().letterOverlap).toBe(5);
     expect(useParameters.getState().bridgeWidth).toBe(10);
   });
+
+  it("includes bulb-hole defaults (feature disabled by default)", () => {
+    expect(DEFAULT_PARAMETERS.bulbHoleDiameter).toBe(0);
+    expect(DEFAULT_PARAMETERS.bulbHoleSpacing).toBe(30);
+    expect(DEFAULT_PARAMETERS.bulbHoleInset).toBe(10); // = DEFAULT_WALL_THICKNESS
+    expect(DEFAULT_PARAMETERS.bulbHoleMaxCount).toBe(12);
+  });
 });

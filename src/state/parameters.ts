@@ -27,6 +27,10 @@ export type Parameters = {
   mountShankDiameter: number;
   mountSlotY: number;
   mountSlotXInset: number;
+  bulbHoleDiameter: number;
+  bulbHoleSpacing: number;
+  bulbHoleInset: number;
+  bulbHoleMaxCount: number;
 };
 
 const DEFAULT_LETTER_HEIGHT = 200;
@@ -56,6 +60,10 @@ export const DEFAULT_PARAMETERS: Parameters = {
   mountShankDiameter: 0,
   mountSlotY: DEFAULT_LETTER_HEIGHT * 0.75,
   mountSlotXInset: DEFAULT_WALL_THICKNESS * 2,
+  bulbHoleDiameter: 0,
+  bulbHoleSpacing: 30,
+  bulbHoleInset: DEFAULT_WALL_THICKNESS,
+  bulbHoleMaxCount: 12,
 };
 
 type Store = Parameters & { set: (p: Partial<Parameters>) => void };
