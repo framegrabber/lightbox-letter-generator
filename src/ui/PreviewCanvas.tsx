@@ -1,5 +1,5 @@
 import { Canvas, useFrame, useThree } from "@react-three/fiber";
-import { OrbitControls, Grid, Text, Billboard, GizmoHelper, GizmoViewport } from "@react-three/drei";
+import { OrbitControls, Grid, Text, Billboard, GizmoHelper, GizmoViewcube } from "@react-three/drei";
 import { useEffect, useMemo, useRef, useState } from "react";
 import * as THREE from "three";
 import { useParameters } from "../state/parameters";
@@ -67,10 +67,14 @@ function AxisTickLabels({ spacing, range }: { spacing: GridSpacing; range: numbe
 
 // Auto-fit defaults: where the focal point sits inside the bbox, the camera
 // distance multiplier, and the unit-vector direction from target to camera.
-// These were derived from a manually-orbited preferred view of BURGER.
-const AUTOFIT_TARGET_FRACTION = { x: 0.5, y: 0.215, z: 0.61 };
+// These were derived from a manually-orbited preferred view of BURGER and
+// then mapped through the scene's display rotation (Z-up world rotated by
+// -π/2 around X for Y-up display so drei gizmos work natively). Original
+// Z-up direction (-0.19, -0.48, 0.86) maps to display (-0.19, 0.86, 0.48);
+// fractions (0.5, 0.215, 0.61) map to (0.5, 0.61, 1 - 0.215) = (0.5, 0.61, 0.785).
+const AUTOFIT_TARGET_FRACTION = { x: 0.5, y: 0.61, z: 0.785 };
 const AUTOFIT_DIST_MULTIPLIER = 1.2;
-const AUTOFIT_DIRECTION = { x: -0.19, y: -0.48, z: 0.86 };
+const AUTOFIT_DIRECTION = { x: -0.19, y: 0.86, z: 0.48 };
 
 type Controls = { target: THREE.Vector3; update: () => void } | null;
 
@@ -81,9 +85,12 @@ function SceneSetup({ fitToken }: { fitToken: number }) {
   const { result } = usePreviewBuildContext();
   const hasFitOnce = useRef(false);
 
-  // Z-up orientation for the camera (matches PixelTagMaker's CAD-style view).
+  // The geometry pipeline emits Z-up coordinates; the scene wraps everything
+  // in a -π/2 X-rotation so we display Y-up. drei's gizmos (Viewcube,
+  // Viewport) hard-code Y-up, so this lets them work natively without
+  // labels/rotation paths going wrong. Camera up matches the displayed scene.
   useEffect(() => {
-    camera.up.set(0, 0, 1);
+    camera.up.set(0, 1, 0);
   }, [camera]);
 
   // Auto-fit only on the very first geometry load. Param changes (including
@@ -199,26 +206,37 @@ export function PreviewCanvas() {
   return (
     <div className="preview-canvas">
       {busy && <div className="preview-busy">Generating…</div>}
-      <Canvas camera={{ fov: 45, position: [40, -30, 50], near: 0.1, far: 5000 }}>
+      <Canvas camera={{ fov: 45, position: [40, 50, 30], near: 0.1, far: 5000 }}>
         <color attach="background" args={["#ffffff"]} />
-        <ambientLight intensity={0.55} />
-        <directionalLight intensity={1.4} position={[60, -40, 80]} />
-        <directionalLight color="#c8d8ee" intensity={0.4} position={[-50, 20, 30]} />
-        {showGrid && <AdaptiveGrid spacing={gridParams.spacing} />}
-        {showGrid && <AxisTickLabels spacing={gridParams.spacing} range={gridParams.range} />}
+        {/* World content lives inside a -π/2 X-rotation: the geometry pipeline
+            emits Z-up but we display Y-up so drei's gizmo widgets (which
+            hard-code Y-up) work natively. Lights are inside the group so
+            light-relative-to-geometry angles are preserved. SceneSetup,
+            GizmoHelper, and CameraHUD stay outside (they're logic/overlay,
+            not world content). */}
+        <group rotation={[-Math.PI / 2, 0, 0]}>
+          <ambientLight intensity={0.55} />
+          <directionalLight intensity={1.4} position={[60, -40, 80]} />
+          <directionalLight color="#c8d8ee" intensity={0.4} position={[-50, 20, 30]} />
+          {showGrid && <AdaptiveGrid spacing={gridParams.spacing} />}
+          {showGrid && <AxisTickLabels spacing={gridParams.spacing} range={gridParams.range} />}
+          {result?.components.map((c, i) => (
+            <PreviewLetter key={i} component={c} xOffset={c.xOffset} />
+          )) ?? null}
+        </group>
         <SceneSetup fitToken={fitToken} />
         {showViewcube && (
           <GizmoHelper alignment="top-left" margin={[64, 64]}>
-            <GizmoViewport
-              axisColors={["#ff5050", "#50c050", "#5070ff"]}
-              labelColor="#222"
+            <GizmoViewcube
+              color="#f5f5f5"
+              opacity={0.95}
+              strokeColor="#333"
+              textColor="#222"
+              hoverColor="#7aa6ff"
             />
           </GizmoHelper>
         )}
         {showCameraHUD && <CameraHUD hudRef={hudRef} />}
-        {result?.components.map((c, i) => (
-          <PreviewLetter key={i} component={c} xOffset={c.xOffset} />
-        )) ?? null}
       </Canvas>
       <div className="preview-toolbar">
         <button

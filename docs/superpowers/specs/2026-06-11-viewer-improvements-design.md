@@ -199,16 +199,19 @@ function AxisTickLabels({ result }: { result: BuildResult | null }) {
 
 `MAX_TICKS_PER_DIRECTION = 30` caps total labels at 60 X + 60 Y = 120 max. Past that range the grid lines continue but labels stop — protects against pathological inputs (5000mm letter generating hundreds of labels).
 
-### `<GizmoHelper>` + `<GizmoViewport>` (shipped) — `<GizmoViewcube>` was the original plan
+### `<GizmoHelper>` + `<GizmoViewcube>` (shipped) — display rotation makes Z-up world Y-up at render time
 
-The plan was `<GizmoViewcube>`, but its face labels and rotation paths are baked Y-up: clicking "FRONT" rotated our Z-up scene 90° and orientation changes took the long way round. Swapped to `<GizmoViewport>` (axis arrows, vector-driven, no labels) per the spec's risk-section fallback.
+The original plan called for `<GizmoViewcube>` but during PoC the cube's labels and rotation paths were wrong because drei's gizmos hard-code Y-up while the scene was Z-up. After a brief detour through `<GizmoViewport>` (the documented fallback), the proper fix landed: wrap scene contents in a `<group rotation={[-Math.PI/2, 0, 0]}>` so the display is Y-up, switch `camera.up = (0, 1, 0)`, and bring the cube back. The geometry pipeline stays Z-up (worker output, STLs, all params).
 
 ```tsx
 {showViewcube && (
   <GizmoHelper alignment="top-left" margin={[64, 64]}>
-    <GizmoViewport
-      axisColors={["#ff5050", "#50c050", "#5070ff"]}
-      labelColor="#222"
+    <GizmoViewcube
+      color="#f5f5f5"
+      opacity={0.95}
+      strokeColor="#333"
+      textColor="#222"
+      hoverColor="#7aa6ff"
     />
   </GizmoHelper>
 )}
@@ -216,7 +219,7 @@ The plan was `<GizmoViewcube>`, but its face labels and rotation paths are baked
 
 Top-left placement: away from the bottom-left Fit/Grid toolbar (and errors overlay) and from the top-right camera-HUD / warnings overlays.
 
-drei's `<GizmoViewport>` shows red/green/blue arrows for the world X/Y/Z axes. Click an arrow to look down that axis. Drag to orbit. Vector-driven so no convention mismatch is possible.
+drei's `<GizmoViewcube>` is the full 26-view widget: 6 faces, 12 edges, 8 corners. Click any region to animate the camera to that orientation. Distance to target preserved automatically. Auto-fit constants in `PreviewCanvas.tsx` are pre-mapped through the display rotation: original Z-up direction `(-0.19, -0.48, 0.86)` maps to display `(-0.19, 0.86, 0.48)`; fractions `(0.5, 0.215, 0.61)` map to `(0.5, 0.61, 0.785)`.
 
 ### Floating toolbar (bottom-left)
 

@@ -37,7 +37,7 @@ npm run lint     # ESLint flat config
 - Letters lay flat in the XY plane, extruded along **+Z**. Z=0 is at the lowest face — the open back when `backCavityDepth > 0`, the back panel when `backCavityDepth = 0`. Front face at `Z = totalDepth + backCavityDepth`.
 - After `flatten.ts`'s Y-flip, **letters span Y ∈ [0, +letterHeight]** — baseline at Y=0, cap-line at Y=+letterHeight. Positive Y is up; the flip negates opentype's screen-down Y to give us a math-style coordinate system.
 - Outer contours emerge CCW, holes CW (via point-in-polygon parity correction in `flatten.ts`).
-- Camera is **Z-up** (`camera.up = (0, 0, 1)`). Auto-fit constants are at the top of `PreviewCanvas.tsx` (target fraction, dist multiplier, direction).
+- The geometry pipeline (worker, STL exports, all the math) is **Z-up**. The preview scene wraps everything in a `<group rotation={[-Math.PI/2, 0, 0]}>` so the display is Y-up — drei's gizmo widgets (`<GizmoViewcube>`, `<GizmoViewport>`) hard-code Y-up, and rendering through this rotation lets them work natively without convention conflicts. The rotation is at scene-display level only; the geometry data and exported STLs remain Z-up. `camera.up = (0, 1, 0)`. Auto-fit constants at the top of `PreviewCanvas.tsx` are pre-mapped through this rotation.
 
 ## Plexi/rabbet semantics — `insetWidth` (not lip width)
 
@@ -143,12 +143,12 @@ Local string state lets the user clear the input or type intermediate values lik
 - A drei `<Grid>` (rotated `[Math.PI/2, 0, 0]` so it lands on world XY) with `cellSize` / `sectionSize` derived from the geometry bbox via `src/ui/grid-spacing.ts`'s `pickGridSpacing` (NICE_NUMBERS sequence 1/2/5/10/20/50/100/200/500/1000/2000/5000, target ~5 major lines across `max(bboxX, bboxY)`).
 - Numbered tick labels along the X axis (Y=0) and Y axis (X=0) using drei `<Text>` inside `<Billboard lockX lockY>` — labels rotate around world Z to face the camera azimuth so they read at any orbit angle except strict top-down. Capped at `MAX_TICKS_PER_DIRECTION = 30` per axis.
 - An `mm` legend label at the origin so the unit is unambiguous; the `"0"` tick is suppressed.
-- A drei `<GizmoHelper><GizmoViewport/></GizmoHelper>` in the top-left for click-to-orient along an axis (red=X, green=Y, blue=Z arrows). Distance to target is preserved; only orientation changes.
+- A drei `<GizmoHelper><GizmoViewcube/></GizmoHelper>` in the top-left for click-to-orient (faces / edges / corners). Distance to target is preserved; only orientation changes. Works natively because the scene contents are wrapped in a Y-up display rotation (see "Coordinate system").
 - A bottom-left `.preview-toolbar` column with the existing Fit button + a new Grid-toggle button.
 
-Both grid and the gizmo are gated on `useUI.showGrid` / `useUI.showViewcube` (session-only flags, defaults `true`). Only `showGrid` has a UI toggle button in v1; `showViewcube` exists in the store for a future toggle. The flag name kept the "viewcube" word for ergonomics even though the actual widget is now the axis-arrow viewport — see Z-up history below.
+Both grid and viewcube are gated on `useUI.showGrid` / `useUI.showViewcube` (session-only flags, defaults `true`). Only `showGrid` has a UI toggle button in v1; `showViewcube` exists in the store for a future toggle.
 
-Z-up history: shipped briefly with `<GizmoViewcube>` (the 26-view widget) but its face labels and rotation paths are baked Y-up — clicking "FRONT" rotated the scene 90° in our Z-up frame and orientation changes took the long way round. Swapped to `<GizmoViewport>` (axis arrows, vector-driven, no labels) which respects `camera.up` correctly. Don't reintroduce the cube without solving the Z-up convention mismatch.
+Display-rotation history: drei's gizmos (Viewcube, Viewport) hard-code Y-up — when run against our originally Z-up scene the cube's face labels and rotation paths were wrong (clicking "FRONT" rotated the word 90°; orientation changes took the long way round). The fix was to wrap scene contents in a `<group rotation={[-Math.PI/2, 0, 0]}>` so display is Y-up, and switch the camera to `camera.up = (0, 1, 0)`. The geometry pipeline (worker, STLs, params) stays Z-up — only the display layer rotates. If a future change needs to reach into the scene at the world-coordinate level (light positions, helpers, debug objects), do so INSIDE the group; anything outside lives in display-Y-up world.
 
 ## Export format
 
