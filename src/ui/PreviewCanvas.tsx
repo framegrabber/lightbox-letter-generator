@@ -168,6 +168,7 @@ export function PreviewCanvas() {
   const params = useParameters();
   const showCameraHUD = useUI((s) => s.showCameraHUD);
   const showGrid = useUI((s) => s.showGrid);
+  const setShowGrid = useUI((s) => s.setShowGrid);
   const { result, busy } = usePreviewBuildContext();
   const gridParams = useMemo(() => {
     const bbox = result ? componentsBBox(result.components) : null;
@@ -201,17 +202,32 @@ export function PreviewCanvas() {
           <PreviewLetter key={i} component={c} xOffset={c.xOffset} />
         )) ?? null}
       </Canvas>
-      <button
-        className="preview-fit"
-        onClick={() => setFitToken((n) => n + 1)}
-        title="Fit camera"
-        aria-label="Fit camera"
-        type="button"
-      >
-        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
-          <path d="M15 3h6v6M9 21H3v-6M21 3l-7 7M3 21l7-7" />
-        </svg>
-      </button>
+      <div className="preview-toolbar">
+        <button
+          className="preview-toolbar-button"
+          onClick={() => setFitToken((n) => n + 1)}
+          title="Fit camera"
+          aria-label="Fit camera"
+          type="button"
+        >
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
+            <path d="M15 3h6v6M9 21H3v-6M21 3l-7 7M3 21l7-7" />
+          </svg>
+        </button>
+        <button
+          className={`preview-toolbar-button${showGrid ? " active" : ""}`}
+          onClick={() => setShowGrid(!showGrid)}
+          title={showGrid ? "Hide grid" : "Show grid"}
+          aria-label={showGrid ? "Hide grid" : "Show grid"}
+          aria-pressed={showGrid}
+          type="button"
+        >
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+            <rect x="3" y="3" width="18" height="18" rx="0" />
+            <path d="M3 9h18M3 15h18M9 3v18M15 3v18" />
+          </svg>
+        </button>
+      </div>
       {showCameraHUD && (
         <div className="preview-hud-wrap">
           <div ref={hudRef} className="preview-hud" />

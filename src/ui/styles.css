@@ -39,7 +39,7 @@ body { margin: 0; }
 }
 .preview-empty { color: #888; }
 .preview-errors {
-  position: absolute; bottom: 0.5rem; left: 0.5rem;
+  position: absolute; bottom: 0.5rem; left: 100px;
   background: #fee; color: #900; padding: 0.5rem; border-radius: 4px; font-size: 0.875rem;
 }
 .preview-warnings {
@@ -48,16 +48,22 @@ body { margin: 0; }
   background: #fffbe6; color: #7a5d00; padding: 0.5rem; border-radius: 4px;
   font-size: 0.875rem; max-width: 360px;
 }
-.preview-fit {
+.preview-toolbar {
   position: absolute; bottom: 12px; left: 12px;
+  display: flex; flex-direction: column; gap: 6px;
+}
+.preview-toolbar-button {
   display: flex; align-items: center; justify-content: center;
   background: #fff; color: #555;
   border: 1px solid #ccc; border-radius: 4px;
   padding: 6px; cursor: pointer;
   transition: all 0.15s ease;
 }
-.preview-fit:hover {
+.preview-toolbar-button:hover {
   color: #111; background: #f5f5f5; border-color: #999;
+}
+.preview-toolbar-button.active {
+  color: #111; background: #eef3ff; border-color: #6c8df0;
 }
 .preview-hud-wrap {
   position: absolute; top: 8px; right: 8px;
