@@ -300,8 +300,9 @@ export function PreviewCanvas() {
         <div className="preview-warnings">
           {result.warnings.map((w, i) => (
             <div key={i}>
-              Bridge disconnected between &lsquo;{w.pair[0].char}&rsquo; and &lsquo;
-              {w.pair[1].char}&rsquo;
+              {w.kind === "bridge_disconnected"
+                ? `Bridge disconnected between '${w.pair[0].char}' and '${w.pair[1].char}'`
+                : `Bulb-hole inset too large for ${w.members.map((m) => m.char).join("")} — holes skipped`}
             </div>
           ))}
         </div>

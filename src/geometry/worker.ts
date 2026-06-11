@@ -6,6 +6,7 @@ import { layoutWord } from "./layout";
 import { mergeIntoComponents } from "./merge";
 import { computeCableHoles } from "./cable-holes";
 import { computeMounts } from "./mounts";
+import { computeBulbHoles } from "./bulb-holes";
 import { buildLetterShell, buildLetterPlexi, centerMeshXY } from "./shell";
 import { buildLetterLayers } from "../exporters/svg";
 import type { GlyphContours } from "./types";
@@ -86,6 +87,17 @@ ctx.onmessage = async (ev: MessageEvent<WorkerRequest>) => {
       backCavityDepth: req.params.backCavityDepth,
     });
 
+    const bulbResult = await computeBulbHoles(comp.mergedContours, {
+      bulbHoleDiameter: req.params.bulbHoleDiameter,
+      bulbHoleSpacing: req.params.bulbHoleSpacing,
+      bulbHoleInset: req.params.bulbHoleInset,
+      bulbHoleMaxCount: req.params.bulbHoleMaxCount,
+      wallThickness: req.params.wallThickness,
+    });
+    if (bulbResult.warning === "bulbhole_inset_collapsed") {
+      warnings.push({ kind: "bulbhole_inset_collapsed", members: memberRefs });
+    }
+
     const meshResult = await buildLetterShell({
       contours: comp.mergedContours,
       totalDepth: req.params.totalDepth,
@@ -95,6 +107,7 @@ ctx.onmessage = async (ev: MessageEvent<WorkerRequest>) => {
       insetWidth: req.params.insetWidth,
       backCavityDepth: req.params.backCavityDepth,
       cableHoles: componentCableHoles,
+      bulbHoles: bulbResult.holes,
       mounts: componentMounts.slots.length > 0 ? componentMounts : undefined,
     });
 

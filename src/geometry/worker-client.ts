@@ -1,5 +1,7 @@
 import type { Parameters } from "../state/parameters";
 
+export type { BulbHole } from "./bulb-holes";
+
 export type ComponentMember = { char: string; index: number };
 
 export type ComponentMesh = {
@@ -24,10 +26,9 @@ export type ComponentError = {
   reason: "offset_collapsed" | "no_contours";
 };
 
-export type MergeWarning = {
-  kind: "bridge_disconnected";
-  pair: [ComponentMember, ComponentMember];
-};
+export type MergeWarning =
+  | { kind: "bridge_disconnected"; pair: [ComponentMember, ComponentMember] }
+  | { kind: "bulbhole_inset_collapsed"; members: ComponentMember[] };
 
 export type BuildResult = {
   components: ComponentMesh[];
@@ -80,6 +81,10 @@ export function build(params: Parameters, fontBuffer: ArrayBuffer): Promise<Buil
     mountShankDiameter: params.mountShankDiameter,
     mountSlotY: params.mountSlotY,
     mountSlotXInset: params.mountSlotXInset,
+    bulbHoleDiameter: params.bulbHoleDiameter,
+    bulbHoleSpacing: params.bulbHoleSpacing,
+    bulbHoleInset: params.bulbHoleInset,
+    bulbHoleMaxCount: params.bulbHoleMaxCount,
   };
   return new Promise((resolve, reject) => {
     const handler = (ev: MessageEvent<WorkerResponse>) => {
