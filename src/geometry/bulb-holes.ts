@@ -60,12 +60,21 @@ export async function computeBulbHoles(
 }
 
 function walkPolylines(polylines: Polyline[], params: BulbHoleParams): BulbHole[] {
-  const segments: { points: Polyline; length: number }[] = polylines.map((p) => {
+  type Segment = { points: Polyline; length: number; closed: boolean };
+  const segments: Segment[] = polylines.map((p) => {
     let total = 0;
     for (let i = 0; i + 1 < p.length; i++) {
       total += Math.hypot(p[i + 1][0] - p[i][0], p[i + 1][1] - p[i][1]);
     }
-    return { points: p, length: total };
+    // A closed loop: first and last vertices are pixel-adjacent (the trace
+    // returned to a neighbour of the start). Use 2 × pixel size as the
+    // tolerance — anything farther apart is treated as an open path with
+    // distinct endpoints worth anchoring holes at.
+    const first = p[0];
+    const last = p[p.length - 1];
+    const closed = p.length >= 2
+      && Math.hypot(last[0] - first[0], last[1] - first[1]) <= 2 * SKELETON_PX_SIZE;
+    return { points: p, length: total, closed };
   });
 
   const totalLength = segments.reduce((s, seg) => s + seg.length, 0);
@@ -86,21 +95,37 @@ function walkPolylines(polylines: Polyline[], params: BulbHoleParams): BulbHole[
       1,
       Math.round((params.bulbHoleMaxCount * seg.length) / totalLength),
     );
-    const holesForSegment = Math.min(desiredCount, capShare);
+    let holesForSegment = Math.min(desiredCount, capShare);
 
     if (holesForSegment === 1 && seg.length < params.bulbHoleSpacing) {
+      // Tiny segment: a single hole at the midpoint reads better than two
+      // overlapping anchors, so bypass the open-path anchor logic.
       const midpoint = sampleAlongPolyline(seg.points, seg.length / 2);
       holes.push({ x: midpoint[0], y: midpoint[1], diameter: dia });
       continue;
     }
 
-    // Place holes inset half a step from each end so they're spread evenly
-    // along the segment (not bunched at the boundary).
-    const step = seg.length / holesForSegment;
-    for (let i = 0; i < holesForSegment; i++) {
-      const t = step * (i + 0.5);
-      const point = sampleAlongPolyline(seg.points, t);
-      holes.push({ x: point[0], y: point[1], diameter: dia });
+    if (seg.closed) {
+      // No meaningful endpoint to anchor — distribute uniformly inset half a
+      // step from each end so the seam at index 0 doesn't double up.
+      const step = seg.length / holesForSegment;
+      for (let i = 0; i < holesForSegment; i++) {
+        const t = step * (i + 0.5);
+        const point = sampleAlongPolyline(seg.points, t);
+        holes.push({ x: point[0], y: point[1], diameter: dia });
+      }
+    } else {
+      // Open path: anchor holes at both endpoints, then distribute the
+      // remaining holes evenly between them. Forces at least 2 holes per
+      // open segment so every stroke tip in the skeleton gets a hole — even
+      // if that nudges the total slightly above bulbHoleMaxCount.
+      if (holesForSegment < 2) holesForSegment = 2;
+      const denom = holesForSegment - 1;
+      for (let i = 0; i < holesForSegment; i++) {
+        const t = (i * seg.length) / denom;
+        const point = sampleAlongPolyline(seg.points, t);
+        holes.push({ x: point[0], y: point[1], diameter: dia });
+      }
     }
   }
 
