@@ -73,6 +73,10 @@ describe("connected-letters bounds", () => {
     mountShankDiameter: 0,
     mountSlotY: 75,
     mountSlotXInset: 20,
+    bulbHoleDiameter: 0,
+    bulbHoleSpacing: 30,
+    bulbHoleInset: 10,
+    bulbHoleMaxCount: 12,
   };
 
   it("accepts zero defaults", () => {
@@ -130,6 +134,10 @@ describe("plexiTolerance bounds", () => {
     mountShankDiameter: 0,
     mountSlotY: 75,
     mountSlotXInset: 20,
+    bulbHoleDiameter: 0,
+    bulbHoleSpacing: 30,
+    bulbHoleInset: 10,
+    bulbHoleMaxCount: 12,
   };
 
   it("accepts the default", () => {
@@ -183,6 +191,10 @@ describe("backCavityDepth bounds", () => {
     mountShankDiameter: 0,
     mountSlotY: 75,
     mountSlotXInset: 20,
+    bulbHoleDiameter: 0,
+    bulbHoleSpacing: 30,
+    bulbHoleInset: 10,
+    bulbHoleMaxCount: 12,
   };
 
   it("accepts the default", () => {
@@ -226,6 +238,10 @@ describe("cableHole bounds", () => {
     mountShankDiameter: 0,
     mountSlotY: 75,
     mountSlotXInset: 20,
+    bulbHoleDiameter: 0,
+    bulbHoleSpacing: 30,
+    bulbHoleInset: 10,
+    bulbHoleMaxCount: 12,
   };
 
   it("accepts the disabled default", () => {
@@ -275,6 +291,10 @@ describe("mount bounds", () => {
     mountShankDiameter: 0,
     mountSlotY: 75,
     mountSlotXInset: 20,
+    bulbHoleDiameter: 0,
+    bulbHoleSpacing: 30,
+    bulbHoleInset: 10,
+    bulbHoleMaxCount: 12,
   };
 
   it("accepts the disabled default", () => {
@@ -306,5 +326,42 @@ describe("mount bounds", () => {
   it("accepts arbitrary finite mountSlotY (no upper bound)", () => {
     expect(validate({ ...base, mountSlotY: -200 }).ok).toBe(true);
     expect(validate({ ...base, mountSlotY: 9999 }).ok).toBe(true);
+  });
+});
+
+describe("bulbHole bounds", () => {
+  it("rejects negative bulbHoleDiameter", () => {
+    const r = validate({ ...DEFAULT_PARAMETERS, bulbHoleDiameter: -1 });
+    expect(r.ok).toBe(false);
+    if (!r.ok) expect(r.errors.find((e) => e.field === "bulbHoleDiameter")).toBeDefined();
+  });
+
+  it("rejects bulbHoleSpacing <= 0", () => {
+    const r = validate({ ...DEFAULT_PARAMETERS, bulbHoleSpacing: 0, bulbHoleDiameter: 8 });
+    expect(r.ok).toBe(false);
+    if (!r.ok) expect(r.errors.find((e) => e.field === "bulbHoleSpacing")).toBeDefined();
+  });
+
+  it("rejects bulbHoleInset <= 0", () => {
+    const r = validate({ ...DEFAULT_PARAMETERS, bulbHoleInset: 0, bulbHoleDiameter: 8 });
+    expect(r.ok).toBe(false);
+    if (!r.ok) expect(r.errors.find((e) => e.field === "bulbHoleInset")).toBeDefined();
+  });
+
+  it("rejects non-integer bulbHoleMaxCount", () => {
+    const r = validate({ ...DEFAULT_PARAMETERS, bulbHoleMaxCount: 2.5, bulbHoleDiameter: 8 });
+    expect(r.ok).toBe(false);
+    if (!r.ok) expect(r.errors.find((e) => e.field === "bulbHoleMaxCount")).toBeDefined();
+  });
+
+  it("rejects bulbHoleMaxCount < 1", () => {
+    const r = validate({ ...DEFAULT_PARAMETERS, bulbHoleMaxCount: 0, bulbHoleDiameter: 8 });
+    expect(r.ok).toBe(false);
+    if (!r.ok) expect(r.errors.find((e) => e.field === "bulbHoleMaxCount")).toBeDefined();
+  });
+
+  it("accepts all bulb-hole defaults", () => {
+    const r = validate(DEFAULT_PARAMETERS);
+    expect(r.ok).toBe(true);
   });
 });
