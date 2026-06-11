@@ -1,5 +1,5 @@
 import { Canvas, useFrame, useThree } from "@react-three/fiber";
-import { OrbitControls, Grid, Text, Billboard } from "@react-three/drei";
+import { OrbitControls, Grid, Text, Billboard, GizmoHelper, GizmoViewcube } from "@react-three/drei";
 import { useEffect, useMemo, useRef, useState } from "react";
 import * as THREE from "three";
 import { useParameters } from "../state/parameters";
@@ -169,6 +169,7 @@ export function PreviewCanvas() {
   const showCameraHUD = useUI((s) => s.showCameraHUD);
   const showGrid = useUI((s) => s.showGrid);
   const setShowGrid = useUI((s) => s.setShowGrid);
+  const showViewcube = useUI((s) => s.showViewcube);
   const { result, busy } = usePreviewBuildContext();
   const gridParams = useMemo(() => {
     const bbox = result ? componentsBBox(result.components) : null;
@@ -197,6 +198,17 @@ export function PreviewCanvas() {
         {showGrid && <AdaptiveGrid spacing={gridParams.spacing} />}
         {showGrid && <AxisTickLabels spacing={gridParams.spacing} range={gridParams.range} />}
         <SceneSetup fitToken={fitToken} />
+        {showViewcube && (
+          <GizmoHelper alignment="top-left" margin={[64, 64]}>
+            <GizmoViewcube
+              color="#f5f5f5"
+              opacity={0.95}
+              strokeColor="#333"
+              textColor="#222"
+              hoverColor="#7aa6ff"
+            />
+          </GizmoHelper>
+        )}
         {showCameraHUD && <CameraHUD hudRef={hudRef} />}
         {result?.components.map((c, i) => (
           <PreviewLetter key={i} component={c} xOffset={c.xOffset} />
