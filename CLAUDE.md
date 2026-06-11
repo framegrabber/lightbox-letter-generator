@@ -136,6 +136,20 @@ Local string state lets the user clear the input or type intermediate values lik
 - `PreviewLetter.tsx` calls `toNonIndexed()` **before** `computeVertexNormals()`. Each triangle then has its own vertices, so normals match each face — crisp 90° creases. Don't drop this; default smooth shading rounds every corner.
 - Plexi uses `MeshPhysicalMaterial` with `transmission: 0.6, thickness: 2, roughness: 0.85, ior: 1.49, opacity: 0.55, depthWrite: false`. The `depthWrite: false` is load-bearing — without it the shell behind the plexi disappears.
 
+## Viewer
+
+`PreviewCanvas.tsx` composes:
+
+- A drei `<Grid>` (rotated `[Math.PI/2, 0, 0]` so it lands on world XY) with `cellSize` / `sectionSize` derived from the geometry bbox via `src/ui/grid-spacing.ts`'s `pickGridSpacing` (NICE_NUMBERS sequence 1/2/5/10/20/50/100/200/500/1000/2000/5000, target ~5 major lines across `max(bboxX, bboxY)`).
+- Numbered tick labels along the X axis (Y=0) and Y axis (X=0) using drei `<Text>` inside `<Billboard lockX lockY>` — labels rotate around world Z to face the camera azimuth so they read at any orbit angle except strict top-down. Capped at `MAX_TICKS_PER_DIRECTION = 30` per axis.
+- An `mm` legend label at the origin so the unit is unambiguous; the `"0"` tick is suppressed.
+- A drei `<GizmoHelper><GizmoViewcube/></GizmoHelper>` in the top-left for click-to-orient (faces / edges / corners). Distance to target is preserved; only orientation changes.
+- A bottom-left `.preview-toolbar` column with the existing Fit button + a new Grid-toggle button.
+
+Both grid and viewcube are gated on `useUI.showGrid` / `useUI.showViewcube` (session-only flags, defaults `true`). Only `showGrid` has a UI toggle button in v1; `showViewcube` exists in the store for a future toggle.
+
+Known viewer landmine: drei's `<GizmoViewcube>` derives orientation from `camera.up`, which our scene sets to `(0, 0, 1)`. Verify the `"TOP"` face truly looks down +Z when the spec is implemented or revisited; if drei's labels misalign for our Z-up convention, fall back to `<GizmoViewport>` (axis arrows, vector-driven, no labels).
+
 ## Export format
 
 ```
@@ -181,6 +195,7 @@ lightbox-<text>-<localIso>.zip
 - Back-cavity feature spec: `docs/superpowers/specs/2026-06-10-back-cavity-design.md` (current with code).
 - Cable-holes feature spec: `docs/superpowers/specs/2026-06-10-cable-holes-design.md` (current with code).
 - Mounting-features feature spec: `docs/superpowers/specs/2026-06-10-mounting-features-design.md` (current with code).
+- Viewer-improvements feature spec: `docs/superpowers/specs/2026-06-11-viewer-improvements-design.md` (current with code).
 - Implementation plan in `docs/superpowers/plans/` is **historical** — frozen at v1, contains stale references (e.g. `rabbetLipWidth`). Treat as an artifact; don't update.
 
 ## Working with this code
