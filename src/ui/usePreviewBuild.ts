@@ -85,6 +85,10 @@ export function usePreviewBuild() {
     params.mountShankDiameter,
     params.mountSlotY,
     params.mountSlotXInset,
+    params.bulbHoleDiameter,
+    params.bulbHoleSpacing,
+    params.bulbHoleInset,
+    params.bulbHoleMaxCount,
   ]);
 
   return { result, busy, layoutFont };
