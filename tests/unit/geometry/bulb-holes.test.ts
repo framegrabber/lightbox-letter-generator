@@ -27,4 +27,11 @@ describe("computeBulbHoles", () => {
     expect(r.holes).toEqual([]);
     expect(r.warning).toBeUndefined();
   });
+
+  it("warns when the inset collapses the centerline (square too thin)", async () => {
+    // 100×200 square; wall=5 → cavity 90×190; inset=200 (way more than 95) → empty.
+    const r = await computeBulbHoles(SQUARE, { ...baseParams, bulbHoleInset: 200 });
+    expect(r.holes).toEqual([]);
+    expect(r.warning).toBe("bulbhole_inset_collapsed");
+  }, 30_000);
 });
