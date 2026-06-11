@@ -22,7 +22,7 @@ In scope:
 - Adaptive grid spacing via a pure helper `pickGridSpacing(bboxMaxDim) → { major, minor }`.
 - Numbered tick labels along the X axis (Y=0) and Y axis (X=0) only, using drei `<Text>` with lock-X/Y `<Billboard>` rotation.
 - drei `<GizmoHelper>` + `<GizmoViewcube>` in the top-left canvas corner, full 26-view (faces + edges + corners).
-- New "Grid toggle" floating icon button stacked vertically with the existing "Fit camera" button at top-right of the canvas.
+- New "Grid toggle" floating icon button stacked vertically with the existing "Fit camera" button at bottom-left of the canvas.
 - New unit tests for `pickGridSpacing` and a small `componentsBBox` helper.
 - CLAUDE.md note describing the new viewer pieces and the Z-up viewcube landmine.
 
@@ -38,13 +38,13 @@ Out of scope:
 
 ## User-visible behaviour
 
-- On a fresh page load, the canvas shows: an adaptive labeled grid on the Z=0 plane, a viewcube widget in the top-left corner, and a vertical toolbar of two icon buttons (Fit, Grid) at top-right.
+- On a fresh page load, the canvas shows: an adaptive labeled grid on the Z=0 plane, a viewcube widget in the top-left corner, and a vertical toolbar of two icon buttons (Fit, Grid) at bottom-left.
 - Clicking any viewcube face/edge/corner animates the camera's orientation to that view; distance to target is preserved (drei default behavior). Dragging the cube orbits the scene the same way as orbiting in the canvas.
 - Clicking the **Grid** icon button toggles `showGrid`. The grid plane and tick labels both hide/show together; the icon flips between a filled and outline state to indicate state.
 - Typing different-sized text changes the grid spacing automatically. A 200mm-tall letter and a 2000mm-tall letter both produce a grid with roughly 5 major lines across the larger horizontal bbox dimension.
 - Tick labels along the X axis (`y=0`) and Y axis (`x=0`) read in plain integer mm (`"50"`, `"-100"`). A small `"mm"` label sits at the origin so the unit is unambiguous. The `0` tick at the origin itself is suppressed (the `"mm"` legend label takes its place).
 - Labels rotate around the world Z axis to face the camera azimuth (lock-X/Y billboard) so they read left-to-right at any orbit angle except strict top-down. At top-down they appear edge-on; that's acceptable since the user can read the grid lines themselves.
-- The existing `gridHelper` plane is removed. The existing Fit button, plexi toggle, camera-HUD toggle, and bottom-left HUD overlay are all unchanged.
+- The existing `gridHelper` plane is removed. The existing Fit button (now part of the bottom-left toolbar), plexi toggle, camera-HUD toggle, and top-right HUD overlay are all unchanged.
 
 ## Parameters / state
 
@@ -215,13 +215,13 @@ function AxisTickLabels({ result }: { result: BuildResult | null }) {
 )}
 ```
 
-Top-left placement: away from the existing top-right Fit/Grid toolbar and bottom-left camera-HUD overlay.
+Top-left placement: away from the bottom-left Fit/Grid toolbar (and errors overlay) and from the top-right camera-HUD / warnings overlays.
 
 drei's `<GizmoViewcube>` is the full 26-view widget: 6 faces, 12 edges, 8 corners. Click any region to animate the camera to that orientation. Distance to target preserved automatically.
 
-### Floating toolbar (top-right)
+### Floating toolbar (bottom-left)
 
-A small vertical column of icon buttons at the top-right of `.preview-canvas`:
+A small vertical column of icon buttons at the bottom-left of `.preview-canvas`, where the Fit button already lives:
 
 1. **Fit** (existing — keep). Re-runs the same auto-fit logic that runs on the first geometry load.
 2. **Grid toggle** (new). Filled icon when `showGrid=true`, outline when `false`.
@@ -246,7 +246,7 @@ The Fit button keeps its current behavior — there's no double-click-to-fit on 
   - Add the Grid-toggle button alongside the existing Fit button
   - Inline `AdaptiveGrid` and `AxisTickLabels` components in this file (small, scoped to viewer)
 - `src/state/ui.ts` — add `showGrid` (default `true`), `setShowGrid`, `showViewcube` (default `true`), `setShowViewcube`
-- `src/ui/styles.css` — toolbar styling (vertical stack at top-right); ensure GizmoHelper canvas overlay layers cleanly above the existing canvas overlays
+- `src/ui/styles.css` — toolbar styling (vertical stack at bottom-left); ensure GizmoHelper canvas overlay layers cleanly above the existing canvas overlays
 - `CLAUDE.md` — short note in a new "Viewer" subsection (or extend "Preview shading"): drei `<Grid>`, viewcube, adaptive spacing helper, Z-up viewcube landmine
 
 ## Tests
@@ -276,7 +276,7 @@ No new e2e assertions. The existing smoke spec mounts the canvas and exports —
 
 ## Acceptance
 
-- Default load: labeled grid visible, viewcube visible top-left, Fit + Grid icons stacked top-right.
+- Default load: labeled grid visible, viewcube visible top-left, Fit + Grid icons stacked bottom-left (errors overlay shifts upward to clear the toolbar).
 - Grid toggle hides/shows grid + labels together. Icon state reflects toggle state.
 - ViewCube click on any face/edge/corner animates camera to that orientation; distance preserved.
 - A 200mm-tall letter and a 2000mm-tall letter both produce a grid with ~5 major lines across the bbox max dimension; spacings come from the NICE_NUMBERS sequence.
