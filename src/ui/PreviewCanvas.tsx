@@ -6,20 +6,13 @@ import { useParameters } from "../state/parameters";
 import { useUI } from "../state/ui";
 import { usePreviewBuildContext } from "./usePreviewBuildContext";
 import { PreviewLetter } from "./PreviewLetter";
-import type { BuildResult } from "../geometry/worker-client";
 import { pickGridSpacing, componentsBBox } from "./grid-spacing";
+import type { GridSpacing } from "./grid-spacing";
 
 const MAX_TICKS_PER_DIRECTION = 30;
 const LABEL_SCALE_FRACTION = 0.18;
 
-function AdaptiveGrid({ result }: { result: BuildResult | null }) {
-  const spacing = useMemo(() => {
-    const bbox = result ? componentsBBox(result.components) : null;
-    if (!bbox) return pickGridSpacing(0);
-    const dim = Math.max(bbox.maxX - bbox.minX, bbox.maxY - bbox.minY);
-    return pickGridSpacing(dim);
-  }, [result]);
-
+function AdaptiveGrid({ spacing }: { spacing: GridSpacing }) {
   return (
     <Grid
       args={[10000, 10000]}
@@ -39,27 +32,17 @@ function AdaptiveGrid({ result }: { result: BuildResult | null }) {
   );
 }
 
-function AxisTickLabels({ result }: { result: BuildResult | null }) {
-  const { spacing, range } = useMemo(() => {
-    const bbox = result ? componentsBBox(result.components) : null;
-    const dim = bbox
-      ? Math.max(bbox.maxX - bbox.minX, bbox.maxY - bbox.minY)
-      : 0;
-    const sp = pickGridSpacing(dim);
-    const r = Math.min(
-      MAX_TICKS_PER_DIRECTION,
-      Math.ceil((Math.max(dim, sp.major * 5) * 1.5) / sp.major),
-    );
-    return { spacing: sp, range: r };
-  }, [result]);
-
-  const labels: { key: string; pos: [number, number, number]; text: string }[] = [];
-  for (let i = -range; i <= range; i++) {
-    if (i === 0) continue;
-    const v = i * spacing.major;
-    labels.push({ key: `x${i}`, pos: [v, -spacing.minor * 1.5, 0], text: String(v) });
-    labels.push({ key: `y${i}`, pos: [-spacing.minor * 1.5, v, 0], text: String(v) });
-  }
+function AxisTickLabels({ spacing, range }: { spacing: GridSpacing; range: number }) {
+  const labels = useMemo(() => {
+    const out: { key: string; pos: [number, number, number]; text: string }[] = [];
+    for (let i = -range; i <= range; i++) {
+      if (i === 0) continue;
+      const v = i * spacing.major;
+      out.push({ key: `x${i}`, pos: [v, -spacing.minor * 1.5, 0], text: String(v) });
+      out.push({ key: `y${i}`, pos: [-spacing.minor * 1.5, v, 0], text: String(v) });
+    }
+    return out;
+  }, [spacing, range]);
 
   const fontSize = spacing.major * LABEL_SCALE_FRACTION;
 
@@ -186,6 +169,18 @@ export function PreviewCanvas() {
   const showCameraHUD = useUI((s) => s.showCameraHUD);
   const showGrid = useUI((s) => s.showGrid);
   const { result, busy } = usePreviewBuildContext();
+  const gridParams = useMemo(() => {
+    const bbox = result ? componentsBBox(result.components) : null;
+    const dim = bbox
+      ? Math.max(bbox.maxX - bbox.minX, bbox.maxY - bbox.minY)
+      : 0;
+    const spacing = pickGridSpacing(dim);
+    const range = Math.min(
+      MAX_TICKS_PER_DIRECTION,
+      Math.ceil((Math.max(dim, spacing.major * 5) * 1.5) / spacing.major),
+    );
+    return { spacing, range };
+  }, [result]);
   const [fitToken, setFitToken] = useState(0);
   const hudRef = useRef<HTMLDivElement | null>(null);
   const [copied, setCopied] = useState(false);
@@ -198,8 +193,8 @@ export function PreviewCanvas() {
         <ambientLight intensity={0.55} />
         <directionalLight intensity={1.4} position={[60, -40, 80]} />
         <directionalLight color="#c8d8ee" intensity={0.4} position={[-50, 20, 30]} />
-        {showGrid && <AdaptiveGrid result={result} />}
-        {showGrid && <AxisTickLabels result={result} />}
+        {showGrid && <AdaptiveGrid spacing={gridParams.spacing} />}
+        {showGrid && <AxisTickLabels spacing={gridParams.spacing} range={gridParams.range} />}
         <SceneSetup fitToken={fitToken} />
         {showCameraHUD && <CameraHUD hudRef={hudRef} />}
         {result?.components.map((c, i) => (
