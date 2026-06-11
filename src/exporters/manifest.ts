@@ -48,7 +48,6 @@ export function buildReadme(
     `  Mount slot inset:  ${params.mountSlotXInset} mm`,
     `  Bulb hole dia:     ${params.bulbHoleDiameter} mm`,
     `  Bulb hole spacing: ${params.bulbHoleSpacing} mm`,
-    `  Bulb hole inset:   ${params.bulbHoleInset} mm`,
     `  Bulb hole max:     ${params.bulbHoleMaxCount}`,
     ``,
     `Files in this archive:`,

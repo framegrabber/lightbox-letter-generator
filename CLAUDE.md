@@ -123,15 +123,17 @@ Tabs (open-back only) are sized to bracket the keyhole shape with a 2 mm margin 
 
 ## Bulb holes
 
-`bulbHoleDiameter`, `bulbHoleSpacing`, `bulbHoleInset`, `bulbHoleMaxCount` (in `state/parameters.ts`) drive the back-panel bulb-hole drilling step. Default `bulbHoleDiameter = 0` disables the feature; geometry is unchanged.
+`bulbHoleDiameter`, `bulbHoleSpacing`, `bulbHoleMaxCount` (in `state/parameters.ts`) drive the back-panel bulb-hole drilling step. Default `bulbHoleDiameter = 0` disables the feature; geometry is unchanged. `bulbHoleInset` is retained in the type for backward compatibility with persisted saves but is **unused** by the current algorithm — early versions used an offset-based approximation that needed tuning, and the field still appears in the URL/localStorage.
 
-`src/geometry/bulb-holes.ts` is a pure helper: given the merged component contours and params, it returns `{ holes, warning? }`. The centerline is `outer.offset(-wallThickness).offset(-bulbHoleInset)` — i.e. the cavity offset further inward by `bulbHoleInset` so the resulting rings sit roughly along the medial axis of each stroke. Each ring contributes `min(round(perimeter/spacing), capShare)` holes, where `capShare = round(maxCount * ringPerimeter / totalPerimeter)`. Rings shorter than `bulbHoleSpacing` get a single hole at the ring centroid.
+The hole positions follow the **true medial axis** of each letter cavity, computed by raster thinning. `src/geometry/skeleton.ts` rasterises the cavity polygons to a 1 mm-pixel binary grid, runs Zhang-Suen iterative thinning until the foreground is one pixel wide, then traces the surviving pixels into open polylines back in mm coordinates. `src/geometry/bulb-holes.ts` walks each polyline at `bulbHoleSpacing` arc-length intervals (capped per polyline by `bulbHoleMaxCount * length / totalLength`), placing a hole at each sample. Polylines shorter than `bulbHoleSpacing` collapse to a single hole at the segment midpoint.
+
+Why thinning rather than `cavity.offset(-d)`: an offset of `-d` produces a 2-D ribbon, and walking its perimeter visits both sides — placing two parallel rows of holes for any non-zero ribbon width. For non-uniform stroke widths (most letters), no single inset value gives a uniformly-thin ribbon, so the offset approach produces scattered or paired holes rather than a single line. Skeleton thinning sidesteps this entirely: the medial axis is a 1-D curve regardless of stroke shape.
 
 `shell.ts` drills each hole as a Z-axis cylinder of length `backThickness + 2·ε`, centred at `Z = backCavityDepth + backThickness/2` so it always pierces the back panel — same code path for flat-back and open-back. The drilling loop runs AFTER cable-holes and BEFORE mounts, so the order is: cavity → cable holes → bulb holes → mount tabs → mount keyholes. A bulb hole that lands inside the keyhole footprint just means the keyhole's subtraction has nothing extra to remove there.
 
-The `centerline.isEmpty()` collapse case (inset too large for the cavity) emits a `bulbhole_inset_collapsed` warning per component. Surfaced via the same `MergeWarning` channel as `bridge_disconnected`.
+If the cavity itself collapses (e.g. wall thickness >= half the letter), the helper emits a `bulbhole_inset_collapsed` warning per component (name preserved for compatibility with the shipped `MergeWarning` union). Surfaced via the same channel as `bridge_disconnected`.
 
-The cap distribution is intentionally proportional, not equal across rings — a small inner counter (e.g. A's triangle) doesn't deserve as many bulbs as the outer stroke perimeter.
+Pixel size of 1 mm is hardcoded in `bulb-holes.ts` as `SKELETON_PX_SIZE`; sub-mm placement error after the half-pixel sample offset is well below typical hole spacings. Skeleton tracing prefers 4-connected neighbours over diagonals so adjacent skeleton steps stay close in arc length — important for `bulbHoleSpacing` to mean what it says.
 
 ## `NumberField` behaviour
 

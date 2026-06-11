@@ -87,8 +87,9 @@ export function usePreviewBuild() {
     params.mountSlotXInset,
     params.bulbHoleDiameter,
     params.bulbHoleSpacing,
-    params.bulbHoleInset,
     params.bulbHoleMaxCount,
+    // bulbHoleInset is intentionally omitted — the skeleton algorithm ignores
+    // it (the field is retained only for persistence backward-compat).
   ]);
 
   return { result, busy, layoutFont };

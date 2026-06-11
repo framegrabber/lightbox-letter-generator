@@ -101,9 +101,12 @@ export function validate(p: Parameters): ValidationResult {
     if (!Number.isFinite(p.bulbHoleSpacing) || p.bulbHoleSpacing <= 0) {
       errors.push({ field: "bulbHoleSpacing", message: "Bulb hole spacing must be > 0" });
     }
-    if (!Number.isFinite(p.bulbHoleInset) || p.bulbHoleInset <= 0) {
-      errors.push({ field: "bulbHoleInset", message: "Bulb hole inset must be > 0" });
-    }
+  }
+  // bulbHoleInset is retained for persistence backward-compat but no longer
+  // used by the geometry helper; we still require it to be a finite number so
+  // serialised values round-trip cleanly.
+  if (!Number.isFinite(p.bulbHoleInset)) {
+    errors.push({ field: "bulbHoleInset", message: "Bulb hole inset must be a finite number" });
   }
   if (!Number.isInteger(p.bulbHoleMaxCount) || p.bulbHoleMaxCount < 1) {
     errors.push({ field: "bulbHoleMaxCount", message: "Bulb hole max count must be an integer ≥ 1" });

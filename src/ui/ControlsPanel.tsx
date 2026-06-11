@@ -234,14 +234,6 @@ export function ControlsPanel() {
           step={1}
         />
         <NumberField
-          label="Bulb hole inset"
-          unit="mm"
-          value={params.bulbHoleInset}
-          onChange={(v) => params.set({ bulbHoleInset: v })}
-          error={errorFor(errs, "bulbHoleInset")}
-          step={1}
-        />
-        <NumberField
           label="Bulb hole max per letter"
           unit=""
           value={params.bulbHoleMaxCount}

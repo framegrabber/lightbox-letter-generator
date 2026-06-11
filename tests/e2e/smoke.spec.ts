@@ -109,7 +109,6 @@ test("end-to-end: bulb holes feature on", async ({ page }) => {
   // Enable bulb holes; values chosen so the H's strokes get a few holes each.
   await page.getByLabel("Bulb hole diameter").fill("8");
   await page.getByLabel("Bulb hole spacing").fill("30");
-  await page.getByLabel("Bulb hole inset").fill("3");
   await page.getByLabel("Bulb hole max per letter").fill("8");
 
   const button = page.getByRole("button", { name: /Download/ });
