@@ -28,6 +28,7 @@ function AdaptiveGrid({ spacing }: { spacing: GridSpacing }) {
       followCamera={false}
       rotation={[Math.PI / 2, 0, 0]}
       position={[0, 0, 0]}
+      userData={{ isSizeIndicator: true }}
     />
   );
 }
@@ -47,7 +48,7 @@ function AxisTickLabels({ spacing, range }: { spacing: GridSpacing; range: numbe
   const fontSize = spacing.major * LABEL_SCALE_FRACTION;
 
   return (
-    <group>
+    <group userData={{ isSizeIndicator: true }}>
       {labels.map((l) => (
         <Billboard key={l.key} position={l.pos} lockX lockY>
           <Text fontSize={fontSize} color="#666" anchorX="center" anchorY="middle">
@@ -98,6 +99,14 @@ function SceneSetup({ fitToken }: { fitToken: number }) {
       let any = false;
       scene.traverse((obj) => {
         if (obj instanceof THREE.Mesh) {
+          // Skip meshes that are part of the size-indicator overlay (grid, axis
+          // labels). They render at world positions far outside the geometry and
+          // would inflate the auto-fit bbox.
+          let cur: THREE.Object3D | null = obj;
+          while (cur) {
+            if (cur.userData?.isSizeIndicator) return;
+            cur = cur.parent;
+          }
           obj.geometry.computeBoundingBox();
           const local = obj.geometry.boundingBox?.clone();
           if (local) {
