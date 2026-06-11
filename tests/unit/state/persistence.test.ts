@@ -187,4 +187,25 @@ describe("persistence migrate", () => {
     const out = migrate({ wallThickness: 10, mountSlotXInset: 30 });
     expect(out.mountSlotXInset).toBe(30);
   });
+
+  it("fills bulb-hole defaults when missing from a legacy save", () => {
+    const out = migrate({ wallThickness: 8, letterHeight: 150 });
+    expect(out.bulbHoleDiameter).toBe(0);   // disabled
+    expect(out.bulbHoleSpacing).toBe(30);
+    expect(out.bulbHoleInset).toBe(10);     // = DEFAULT_PARAMETERS.bulbHoleInset
+    expect(out.bulbHoleMaxCount).toBe(12);
+  });
+
+  it("preserves explicit bulb-hole values from a save", () => {
+    const out = migrate({
+      bulbHoleDiameter: 9,
+      bulbHoleSpacing: 25,
+      bulbHoleInset: 6,
+      bulbHoleMaxCount: 8,
+    });
+    expect(out.bulbHoleDiameter).toBe(9);
+    expect(out.bulbHoleSpacing).toBe(25);
+    expect(out.bulbHoleInset).toBe(6);
+    expect(out.bulbHoleMaxCount).toBe(8);
+  });
 });

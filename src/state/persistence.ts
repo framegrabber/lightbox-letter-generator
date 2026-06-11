@@ -67,6 +67,19 @@ export function migrate(raw: Record<string, unknown>): Partial<Parameters> {
     out.mountSlotXInset = wt * 2;
   }
 
+  if (typeof out.bulbHoleDiameter !== "number") {
+    out.bulbHoleDiameter = DEFAULT_PARAMETERS.bulbHoleDiameter;
+  }
+  if (typeof out.bulbHoleSpacing !== "number") {
+    out.bulbHoleSpacing = DEFAULT_PARAMETERS.bulbHoleSpacing;
+  }
+  if (typeof out.bulbHoleInset !== "number") {
+    out.bulbHoleInset = DEFAULT_PARAMETERS.bulbHoleInset;
+  }
+  if (typeof out.bulbHoleMaxCount !== "number") {
+    out.bulbHoleMaxCount = DEFAULT_PARAMETERS.bulbHoleMaxCount;
+  }
+
   return out as Partial<Parameters>;
 }
 
@@ -117,6 +130,10 @@ export function initPersistence(): void {
       mountShankDiameter: state.mountShankDiameter,
       mountSlotY: state.mountSlotY,
       mountSlotXInset: state.mountSlotXInset,
+      bulbHoleDiameter: state.bulbHoleDiameter,
+      bulbHoleSpacing: state.bulbHoleSpacing,
+      bulbHoleInset: state.bulbHoleInset,
+      bulbHoleMaxCount: state.bulbHoleMaxCount,
     };
     const json = JSON.stringify(ser);
     try {
