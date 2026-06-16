@@ -82,6 +82,17 @@ body { margin: 0; }
   padding: 4px 8px; cursor: pointer;
 }
 .preview-hud-copy:hover { color: #111; background: #f5f5f5; border-color: #999; }
+.preview-dimensions-hud {
+  position: absolute; bottom: 12px; right: 12px;
+  display: flex; align-items: baseline; gap: 10px;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  font-size: 12px; line-height: 1; color: #444;
+  background: #ffffffd8; border: 1px solid #ddd; border-radius: 4px;
+  padding: 6px 10px;
+  user-select: text;
+}
+.preview-dimensions-hud strong { color: #111; font-weight: 600; }
+.preview-dimensions-hud-unit { color: #888; font-size: 11px; }
 .checkbox-field {
   display: flex; align-items: center; gap: 0.4rem;
   font-size: 0.875rem; margin-top: 0.5rem;

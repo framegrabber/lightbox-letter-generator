@@ -187,10 +187,13 @@ export function PreviewCanvas() {
   const setShowGrid = useUI((s) => s.setShowGrid);
   const showViewcube = useUI((s) => s.showViewcube);
   const { result, busy } = usePreviewBuildContext();
+  const wordBBox = useMemo(
+    () => (result ? componentsBBox(result.components) : null),
+    [result],
+  );
   const gridParams = useMemo(() => {
-    const bbox = result ? componentsBBox(result.components) : null;
-    const dim = bbox
-      ? Math.max(bbox.maxX - bbox.minX, bbox.maxY - bbox.minY)
+    const dim = wordBBox
+      ? Math.max(wordBBox.maxX - wordBBox.minX, wordBBox.maxY - wordBBox.minY)
       : 0;
     const spacing = pickGridSpacing(dim);
     const range = Math.min(
@@ -198,7 +201,15 @@ export function PreviewCanvas() {
       Math.ceil((Math.max(dim, spacing.major * 5) * 1.5) / spacing.major),
     );
     return { spacing, range };
-  }, [result]);
+  }, [wordBBox]);
+  const dimensions = useMemo(() => {
+    if (!wordBBox) return null;
+    return {
+      width: wordBBox.maxX - wordBBox.minX,
+      height: wordBBox.maxY - wordBBox.minY,
+      depth: params.totalDepth + params.backCavityDepth,
+    };
+  }, [wordBBox, params.totalDepth, params.backCavityDepth]);
   const [fitToken, setFitToken] = useState(0);
   const hudRef = useRef<HTMLDivElement | null>(null);
   const [copied, setCopied] = useState(false);
@@ -264,6 +275,14 @@ export function PreviewCanvas() {
           </svg>
         </button>
       </div>
+      {dimensions && (
+        <div className="preview-dimensions-hud" aria-label="Word bounding box dimensions">
+          <span>W <strong>{dimensions.width.toFixed(1)}</strong></span>
+          <span>H <strong>{dimensions.height.toFixed(1)}</strong></span>
+          <span>D <strong>{dimensions.depth.toFixed(1)}</strong></span>
+          <span className="preview-dimensions-hud-unit">mm</span>
+        </div>
+      )}
       {showCameraHUD && (
         <div className="preview-hud-wrap">
           <div ref={hudRef} className="preview-hud" />
