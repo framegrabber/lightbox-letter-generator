@@ -88,6 +88,8 @@ export function usePreviewBuild() {
     params.bulbHoleDiameter,
     params.bulbHoleSpacing,
     params.bulbHoleMaxCount,
+    params.maxPieceWidth,
+    params.cuts,
     // bulbHoleInset is intentionally omitted — the skeleton algorithm ignores
     // it (the field is retained only for persistence backward-compat).
   ]);

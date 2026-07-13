@@ -13,6 +13,12 @@ export type ComponentMesh = {
   plexi: { vertProperties: Float32Array; triVerts: Uint32Array } | null;
 };
 
+export type SlicedComponentMesh = ComponentMesh & {
+  sliceIndex: number;
+  totalSlices: number;
+  parentSlot: number;   // 1-based, matches the parent's index in `components` (+ 1)
+};
+
 export type ComponentLayers = {
   members: ComponentMember[];
   back: [number, number][][];
@@ -30,11 +36,19 @@ export type MergeWarning =
   | { kind: "bridge_disconnected"; pair: [ComponentMember, ComponentMember] }
   | { kind: "bulbhole_inset_collapsed"; members: ComponentMember[] };
 
+export type SliceWarning =
+  | { kind: "slice_empty"; componentMembers: ComponentMember[]; sliceIndex: number }
+  | { kind: "slice_crossed"; cuts: [number, number] }
+  | { kind: "slice_oversize"; componentMembers: ComponentMember[]; sliceIndex: number; width: number }
+  | { kind: "slice_recommended"; componentMembers: ComponentMember[] };
+
 export type BuildResult = {
   components: ComponentMesh[];
+  slicedComponents: SlicedComponentMesh[];
   layers: ComponentLayers[];
+  slicedLayers: ComponentLayers[];
   errors: ComponentError[];
-  warnings: MergeWarning[];
+  warnings: (MergeWarning | SliceWarning)[];
 };
 
 let worker: Worker | null = null;
@@ -50,9 +64,11 @@ function ensureWorker(): Worker {
 export type WorkerResponse = {
   requestId: string;
   components: ComponentMesh[];
+  slicedComponents: SlicedComponentMesh[];
   layers: ComponentLayers[];
+  slicedLayers: ComponentLayers[];
   errors: ComponentError[];
-  warnings: MergeWarning[];
+  warnings: (MergeWarning | SliceWarning)[];
 };
 
 export function build(params: Parameters, fontBuffer: ArrayBuffer): Promise<BuildResult> {
@@ -85,6 +101,8 @@ export function build(params: Parameters, fontBuffer: ArrayBuffer): Promise<Buil
     bulbHoleSpacing: params.bulbHoleSpacing,
     bulbHoleInset: params.bulbHoleInset,
     bulbHoleMaxCount: params.bulbHoleMaxCount,
+    maxPieceWidth: params.maxPieceWidth,
+    cuts: params.cuts,
   };
   return new Promise((resolve, reject) => {
     const handler = (ev: MessageEvent<WorkerResponse>) => {
@@ -93,7 +111,9 @@ export function build(params: Parameters, fontBuffer: ArrayBuffer): Promise<Buil
       w.removeEventListener("error", errorHandler);
       resolve({
         components: ev.data.components,
+        slicedComponents: ev.data.slicedComponents,
         layers: ev.data.layers,
+        slicedLayers: ev.data.slicedLayers,
         errors: ev.data.errors,
         warnings: ev.data.warnings,
       });

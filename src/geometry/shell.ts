@@ -15,6 +15,12 @@ export type ShellInputs = {
   cableHoles?: ReadonlyArray<CableHole>;
   bulbHoles?: ReadonlyArray<BulbHole>;
   mounts?: MountPlan;
+  // For sliced pieces: cavity/rabbet of the FULL parent intersected with the
+  // strip. When passed, used as-is so the cavity reaches cut edges and the
+  // butt-joint channel stays open. Without them, both are offset from
+  // `contours`, which would seal the cavity at cuts.
+  cavityContours?: GlyphContours;
+  rabbetContours?: GlyphContours;
 };
 
 export type ShellMeshResult =
@@ -33,9 +39,15 @@ export async function buildLetterShell(input: ShellInputs): Promise<ShellMeshRes
   const { CrossSection } = m;
 
   const outer = new CrossSection(input.contours, "NonZero");
-  const cavity = outer.offset(-input.wallThickness, "Round");
   const lipWidth = input.wallThickness - input.insetWidth;
-  const rabbetCut = outer.offset(-lipWidth, "Round");
+  const cavity =
+    input.cavityContours
+      ? new CrossSection(input.cavityContours, "NonZero")
+      : outer.offset(-input.wallThickness, "Round");
+  const rabbetCut =
+    input.rabbetContours
+      ? new CrossSection(input.rabbetContours, "NonZero")
+      : outer.offset(-lipWidth, "Round");
 
   if (cavity.isEmpty() || rabbetCut.isEmpty()) {
     outer.delete();
@@ -83,11 +95,7 @@ export async function buildLetterShell(input: ShellInputs): Promise<ShellMeshRes
     const { Manifold } = m;
     for (const hole of input.cableHoles) {
       if (hole.diameter <= 0) continue;
-      // Z-cylinder centered at origin: length high, radius = diameter/2,
-      // both end-caps with the same radius, default circular segments,
-      // centered=true so it spans -length/2 to +length/2 along Z.
       const cyl = Manifold.cylinder(hole.length, hole.diameter / 2, hole.diameter / 2, undefined, true);
-      // Rotate 90° around Y axis to align the cylinder axis with the X axis.
       const cylX = cyl.rotate([0, 90, 0]);
       const cylPositioned = cylX.translate([hole.x, hole.y, hole.z]);
       const newShell = shell.subtract(cylPositioned);
@@ -119,18 +127,12 @@ export async function buildLetterShell(input: ShellInputs): Promise<ShellMeshRes
   if (input.mounts && (input.mounts.slots.length > 0 || input.mounts.tabs.length > 0)) {
     const { Manifold } = m;
 
-    // 1. UNION tabs (open-back only — flat-back has empty tabs array).
-    // Each tab is clipped to the letter's outer outline (intersect with
-    // outerPrism) before unioning, so the tab follows the actual letter
-    // shape across its full Y range — never sticks out where the outline
-    // is narrower than slice.minX/maxX at the slot's Y.
     for (const tab of input.mounts.tabs) {
       const tabSize: [number, number, number] = [
         tab.maxX - tab.minX,
         tab.maxY - tab.minY,
         tab.zTop - tab.zBottom,
       ];
-      // Manifold.cube(size, false): one corner at origin, opposite at +size.
       const tabBox = Manifold.cube(tabSize, false);
       const tabPositioned = tabBox.translate([tab.minX, tab.minY, tab.zBottom]);
       const tabClipped = tabPositioned.intersect(outerPrism);
@@ -142,14 +144,6 @@ export async function buildLetterShell(input: ShellInputs): Promise<ShellMeshRes
       shell = newShell;
     }
 
-    // 2. SUBTRACT keyhole through-holes.
-    // Keyhole always sits at the very back: through the back panel for
-    // flat-back letters, through the union'd tabs for open-back letters.
-    // Z ∈ [0, backThickness].
-    //
-    // The keyhole shape is: head circle at the bottom + narrow slot box +
-    // small rounded top circle, so both ends of the slot are rounded —
-    // a stadium with a wider head bulb at the bottom.
     const keyholeHeight = input.backThickness;
     const keyholeCenterZ = input.backThickness / 2;
 
@@ -182,9 +176,6 @@ export async function buildLetterShell(input: ShellInputs): Promise<ShellMeshRes
   }
 
   const mesh = shell.getMesh();
-  // Copy typed array views into owned arrays before any .delete() calls;
-  // the views returned by getMesh() are windows into the WASM heap and
-  // become unsafe to read once the manifold object is destroyed.
   const vertProperties = mesh.vertProperties.slice();
   const triVerts = mesh.triVerts.slice();
 
@@ -212,12 +203,12 @@ export type PlexiInputs = {
   insetWidth: number;
   plexiTolerance: number;
   backCavityDepth: number;
+  // Sliced plexi cutout — full parent's plexi offset, intersected with the
+  // strip. Same rationale as ShellInputs.cavityContours: keep the rabbet
+  // open to the cut edge so two pieces' inserts butt cleanly.
+  plexiContours?: GlyphContours;
 };
 
-// Standalone mesh of just the plexi piece — same XY shape as the rabbet
-// cutout, shrunk inward by `plexiTolerance` so the printed or cut insert
-// drops into the recess. Extruded by rabbetDepth, positioned to sit flush.
-// Returns null if the inset cutout collapses for this glyph.
 export async function buildLetterPlexi(input: PlexiInputs): Promise<{ vertProperties: Float32Array; triVerts: Uint32Array } | null> {
   if (input.contours.length === 0) return null;
   const m = await getManifold();
@@ -225,7 +216,9 @@ export async function buildLetterPlexi(input: PlexiInputs): Promise<{ vertProper
 
   const outer = new CrossSection(input.contours, "NonZero");
   const lipWidth = input.wallThickness - input.insetWidth;
-  const rabbetCut = outer.offset(-(lipWidth + input.plexiTolerance), "Round");
+  const rabbetCut = input.plexiContours
+    ? new CrossSection(input.plexiContours, "NonZero")
+    : outer.offset(-(lipWidth + input.plexiTolerance), "Round");
 
   if (rabbetCut.isEmpty()) {
     outer.delete();
@@ -269,7 +262,7 @@ export function centerMeshXY(mesh: { vertProperties: Float32Array; triVerts: Uin
   for (let i = 0; i < v.length; i += 3) {
     out[i] = v[i] - cx;
     out[i + 1] = v[i + 1] - cy;
-    out[i + 2] = v[i + 2]; // Z = 0 at the lowest face from buildLetterShell's extrusion
+    out[i + 2] = v[i + 2];
   }
   return {
     vertProperties: out,

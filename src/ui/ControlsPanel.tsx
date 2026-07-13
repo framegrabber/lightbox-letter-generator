@@ -1,12 +1,14 @@
+import { useRef, useEffect } from "react";
 import { useParameters } from "../state/parameters";
 import { useUI } from "../state/ui";
-import { validate, type ValidationError } from "../geometry/validate";
+import { validate } from "../geometry/validate";
 import { TextInput } from "./TextInput";
 import { FontPicker } from "./FontPicker";
 import { NumberField } from "./NumberField";
 import { ExportButtons } from "./ExportButtons";
+import { SlicingControls } from "./SlicingControls";
 
-function errorFor(errors: ValidationError[], field: string): string | undefined {
+function errorFor(errors: { field: string; message: string }[], field: string): string | undefined {
   return errors.find((e) => e.field === field)?.message;
 }
 
@@ -21,7 +23,6 @@ function CameraHUDToggle() {
   );
 }
 
-
 function PlexiToggle() {
   const show = useUI((s) => s.showPlexi);
   const setShow = useUI((s) => s.setShowPlexi);
@@ -33,18 +34,70 @@ function PlexiToggle() {
   );
 }
 
+function CollapsibleFieldset({
+  legend,
+  badge,
+  children,
+  initiallyOpen,
+}: {
+  legend: string;
+  badge?: string;
+  children: React.ReactNode;
+  initiallyOpen: boolean;
+}) {
+  const ref = useRef<HTMLDetailsElement>(null);
+  useEffect(() => {
+    if (ref.current) {
+      ref.current.open = initiallyOpen;
+    }
+  }, [initiallyOpen]);
+
+  return (
+    <details ref={ref} className="collapsible-fieldset">
+      <summary>
+        <span className="legend-text">{legend}</span>
+        {badge && <span className="badge">{badge}</span>}
+      </summary>
+      <fieldset>
+        <legend className="sr-only">{legend}</legend>
+        {children}
+      </fieldset>
+    </details>
+  );
+}
+
 export function ControlsPanel() {
   const params = useParameters();
   const result = validate(params);
   const errs = result.ok ? [] : result.errors;
 
+  const isConnectorsActive = params.letterOverlap > 0 || params.bridgeWidth > 0;
+  const isCableHolesActive = params.cableHoleDiameter > 0;
+  const isMountingActive = params.mountShankDiameter > 0;
+  const isBulbHolesActive = params.bulbHoleDiameter > 0;
+  const isSlicingActive = params.cuts.length > 0 || params.maxPieceWidth > 0;
+
+  const fontBadge =
+    params.fontSource.kind === "bundled"
+      ? params.fontSource.id
+      : "Uploaded";
+
   return (
     <aside className="controls-panel">
-      <TextInput />
-      <FontPicker />
+      <CollapsibleFieldset
+        legend="Text & Font"
+        initiallyOpen={true}
+        badge={fontBadge}
+      >
+        <TextInput />
+        <FontPicker />
+      </CollapsibleFieldset>
 
-      <fieldset>
-        <legend>Size</legend>
+      <CollapsibleFieldset
+        legend="Size"
+        initiallyOpen={true}
+        badge={`${params.letterHeight} mm`}
+      >
         <NumberField
           label="Letter height"
           unit="mm"
@@ -53,10 +106,13 @@ export function ControlsPanel() {
           error={errorFor(errs, "letterHeight")}
           step={1}
         />
-      </fieldset>
+      </CollapsibleFieldset>
 
-      <fieldset>
-        <legend>Walls</legend>
+      <CollapsibleFieldset
+        legend="Walls"
+        initiallyOpen={true}
+        badge={`${params.wallThickness} mm wall`}
+      >
         <NumberField
           label="Wall thickness"
           unit="mm"
@@ -86,10 +142,13 @@ export function ControlsPanel() {
           error={errorFor(errs, "backCavityDepth")}
           step={1}
         />
-      </fieldset>
+      </CollapsibleFieldset>
 
-      <fieldset>
-        <legend>Plexi inset</legend>
+      <CollapsibleFieldset
+        legend="Plexi inset"
+        initiallyOpen={true}
+        badge={`${params.insetWidth} mm inset`}
+      >
         <NumberField
           label="Rabbet depth"
           unit="mm"
@@ -113,10 +172,13 @@ export function ControlsPanel() {
           step={0.05}
         />
         <PlexiToggle />
-      </fieldset>
+      </CollapsibleFieldset>
 
-      <fieldset>
-        <legend>Connectors</legend>
+      <CollapsibleFieldset
+        legend="Connectors"
+        initiallyOpen={isConnectorsActive}
+        badge={isConnectorsActive ? "Active" : undefined}
+      >
         <NumberField
           label="Letter overlap"
           unit="mm"
@@ -149,10 +211,13 @@ export function ControlsPanel() {
           error={errorFor(errs, "bridgeY")}
           step={1}
         />
-      </fieldset>
+      </CollapsibleFieldset>
 
-      <fieldset>
-        <legend>Cable holes</legend>
+      <CollapsibleFieldset
+        legend="Cable holes"
+        initiallyOpen={isCableHolesActive}
+        badge={isCableHolesActive ? `${params.cableHoleDiameter} mm` : undefined}
+      >
         <NumberField
           label="Cable hole diameter"
           unit="mm"
@@ -185,10 +250,13 @@ export function ControlsPanel() {
           />
           Power-entry holes on outer ends
         </label>
-      </fieldset>
+      </CollapsibleFieldset>
 
-      <fieldset>
-        <legend>Mounting</legend>
+      <CollapsibleFieldset
+        legend="Mounting"
+        initiallyOpen={isMountingActive}
+        badge={isMountingActive ? `${params.mountShankDiameter} mm shank` : undefined}
+      >
         <NumberField
           label="Mount shank diameter"
           unit="mm"
@@ -213,10 +281,13 @@ export function ControlsPanel() {
           error={errorFor(errs, "mountSlotXInset")}
           step={1}
         />
-      </fieldset>
+      </CollapsibleFieldset>
 
-      <fieldset>
-        <legend>Bulb holes</legend>
+      <CollapsibleFieldset
+        legend="Bulb holes"
+        initiallyOpen={isBulbHolesActive}
+        badge={isBulbHolesActive ? `${params.bulbHoleDiameter} mm` : undefined}
+      >
         <NumberField
           label="Bulb hole diameter"
           unit="mm"
@@ -241,10 +312,17 @@ export function ControlsPanel() {
           error={errorFor(errs, "bulbHoleMaxCount")}
           step={1}
         />
-      </fieldset>
+      </CollapsibleFieldset>
 
-      <details>
-        <summary>Advanced</summary>
+      <CollapsibleFieldset
+        legend="Slicing"
+        initiallyOpen={isSlicingActive}
+        badge={isSlicingActive ? `${params.cuts.length} cut(s)` : undefined}
+      >
+        <SlicingControls />
+      </CollapsibleFieldset>
+
+      <CollapsibleFieldset legend="Advanced" initiallyOpen={false}>
         <NumberField
           label="Bezier tolerance"
           unit="mm"
@@ -254,7 +332,7 @@ export function ControlsPanel() {
           error={errorFor(errs, "bezierTolerance")}
         />
         <CameraHUDToggle />
-      </details>
+      </CollapsibleFieldset>
 
       <ExportButtons disabled={!result.ok} />
     </aside>

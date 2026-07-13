@@ -49,17 +49,42 @@ export function buildReadme(
     `  Bulb hole dia:     ${params.bulbHoleDiameter} mm`,
     `  Bulb hole spacing: ${params.bulbHoleSpacing} mm`,
     `  Bulb hole max:     ${params.bulbHoleMaxCount}`,
-    ``,
-    `Files in this archive:`,
-    `  stl/chars/NN_<chars>_char.stl    — 3D-printable letter shells`,
-    `  stl/plexi/NN_<chars>_plexi.stl   — 3D-printable plexi inserts`,
-    `  svg/NN_<chars>_plexi.svg          — plexi cut shapes (cut these from acrylic)`,
-    ``,
-    `NN preserves left-to-right order. Spaces are skipped. Each component`,
-    `produces up to three files (shell STL, plexi STL, plexi SVG) sharing`,
-    `the same NN slot index.`,
-    ``,
   ];
+
+  if (params.maxPieceWidth > 0 || params.cuts.length > 0) {
+    lines.push(`  Max piece width:   ${params.maxPieceWidth} mm`);
+  }
+  lines.push(``);
+
+  if (params.cuts.length > 0) {
+    lines.push(`Slicing:`);
+    lines.push(`  Max piece width:    ${params.maxPieceWidth > 0 ? `${params.maxPieceWidth} mm` : "disabled"}`);
+    lines.push(`  Cuts (${params.cuts.length}):`);
+    params.cuts.forEach((c, i) => {
+      const xStr = c.x.toFixed(1).padStart(5, " ");
+      const angleStr = c.angle >= 0 ? ` ${c.angle.toFixed(1)}` : c.angle.toFixed(1);
+      lines.push(`    Cut ${i + 1}: x = ${xStr} mm,  angle = ${angleStr}°`);
+    });
+    if (pieces && pieces.length > 0) {
+      const totalPieces = pieces.reduce((sum, p) => sum + p.count, 0);
+      lines.push(`  Pieces per word:    ${totalPieces}`);
+    }
+    lines.push(``);
+  }
+
+  lines.push(`Files in this archive:`);
+  lines.push(`  stl/chars/NN_<chars>_char.stl             — 3D-printable letter shells`);
+  lines.push(`  stl/chars/NN_<chars>_char_slice-K.stl     — sliced letter shells`);
+  lines.push(`  stl/plexi/NN_<chars>_plexi.stl            — 3D-printable plexi inserts`);
+  lines.push(`  stl/plexi/NN_<chars>_plexi_slice-K.stl    — sliced plexi inserts`);
+  lines.push(`  svg/NN_<chars>_plexi.svg                  — plexi cut shapes (cut these from acrylic)`);
+  lines.push(`  svg/NN_<chars>_plexi_slice-K.svg          — sliced plexi cut shapes`);
+  lines.push(``);
+  lines.push(`NN preserves left-to-right order. Spaces are skipped. Each component`);
+  lines.push(`produces up to six files (full + sliced shell STL, full + sliced plexi STL,`);
+  lines.push(`full + sliced plexi SVG) sharing the same NN slot index.`);
+  lines.push(`Slice index K is 1-based and zero-padded only when total slices >= 10.`);
+  lines.push(``);
 
   if (pieces && pieces.length > 0) {
     lines.push(`Pieces:`);

@@ -2,7 +2,7 @@
 body { margin: 0; }
 .app {
   display: grid;
-  grid-template: 1fr auto / 320px 1fr;
+  grid-template: 1fr auto / 360px 1fr;
   height: 100vh;
 }
 .app-footer {
@@ -103,3 +103,164 @@ body { margin: 0; }
 .font-picker select, .font-picker button { margin-right: 0.25rem; }
 .export-buttons { display: flex; flex-direction: column; gap: 0.25rem; margin-top: 1rem; }
 .export-buttons button { padding: 0.5rem; }
+
+/* Collapsible Fieldsets */
+.collapsible-fieldset {
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  margin-bottom: 0.75rem;
+  background: #fff;
+}
+.collapsible-fieldset summary {
+  cursor: pointer;
+  padding: 0.5rem 0.75rem;
+  font-weight: 600;
+  font-size: 0.875rem;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  user-select: none;
+  list-style: none;
+}
+.collapsible-fieldset summary::-webkit-details-marker {
+  display: none;
+}
+.collapsible-fieldset summary::before {
+  content: '▶';
+  font-size: 0.65rem;
+  color: #666;
+  transition: transform 0.15s ease;
+}
+.collapsible-fieldset[open] summary::before {
+  transform: rotate(90deg);
+}
+.collapsible-fieldset .badge {
+  font-size: 0.7rem;
+  font-weight: 500;
+  color: #0066cc;
+  background: #e6f0ff;
+  padding: 1px 5px;
+  border-radius: 3px;
+  margin-left: auto;
+}
+.collapsible-fieldset fieldset {
+  border: none;
+  border-top: 1px solid #eee;
+  padding: 0.6rem 0.5rem 0.75rem;
+  margin: 0;
+}
+.collapsible-fieldset .sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+/* Slicing Controls */
+.slicing-actions {
+  display: flex;
+  gap: 0.4rem;
+  margin-top: 0.5rem;
+  margin-bottom: 0.75rem;
+  flex-wrap: wrap;
+}
+.slicing-actions .btn {
+  padding: 0.3rem 0.65rem;
+  font-size: 0.8rem;
+  border-radius: 5px;
+}
+.field-help {
+  font-size: 0.75rem;
+  color: #666;
+  margin: 0.25rem 0 0.75rem 0;
+  line-height: 1.4;
+}
+.field-help.empty-state {
+  font-style: italic;
+  color: #888;
+  text-align: center;
+  padding: 0.5rem;
+  background: #f9f9f9;
+  border-radius: 4px;
+  border: 1px dashed #ddd;
+}
+.cut-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  margin-top: 0.5rem;
+}
+.cut-row {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  background: #fafafa;
+  border: 1px solid #e5e5e5;
+  border-radius: 6px;
+  padding: 0.4rem 0.5rem;
+}
+.cut-index {
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: #444;
+  font-variant-numeric: tabular-nums;
+}
+.cut-inputs {
+  display: flex;
+  gap: 0.4rem;
+  align-items: center;
+}
+.compact-label {
+  display: flex;
+  align-items: center;
+  gap: 0.2rem;
+  font-size: 0.75rem;
+  color: #444;
+  font-weight: 500;
+  white-space: nowrap;
+}
+.compact-input {
+  padding: 0.2rem 0.3rem;
+  font-size: 0.78rem;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+  background: #fff;
+  font-variant-numeric: tabular-nums;
+}
+.compact-label:first-child .compact-input {
+  width: 62px;
+}
+.compact-label:last-child .compact-input {
+  width: 42px;
+}
+.compact-input:focus {
+  outline: none;
+  border-color: #6c8df0;
+  box-shadow: 0 0 0 2px rgba(108, 141, 240, 0.2);
+}
+.compact-unit {
+  font-size: 0.7rem;
+  color: #888;
+}
+.cut-remove-btn {
+  color: #999;
+  background: transparent;
+  border: 1px solid transparent;
+  border-radius: 4px;
+  padding: 0.15rem 0.3rem;
+  font-size: 0.9rem;
+  line-height: 1;
+  cursor: pointer;
+  transition: all 0.1s ease;
+  font-family: system-ui, sans-serif;
+  flex-shrink: 0;
+}
+.cut-remove-btn:hover {
+  color: #c00;
+  background: #fee;
+}

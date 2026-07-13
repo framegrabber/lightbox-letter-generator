@@ -10,6 +10,10 @@ type UIState = {
   setShowGrid: (v: boolean) => void;
   showViewcube: boolean;
   setShowViewcube: (v: boolean) => void;
+  showOrthoCamera: boolean;
+  setShowOrthoCamera: (v: boolean) => void;
+  wordBBox: { minX: number; maxX: number } | null;
+  setWordBBox: (bbox: { minX: number; maxX: number } | null) => void;
 };
 
 export const useUI = create<UIState>((set) => ({
@@ -21,4 +25,8 @@ export const useUI = create<UIState>((set) => ({
   setShowGrid: (v) => set({ showGrid: v }),
   showViewcube: true,
   setShowViewcube: (v) => set({ showViewcube: v }),
+  showOrthoCamera: false,
+  setShowOrthoCamera: (v) => set({ showOrthoCamera: v }),
+  wordBBox: null,
+  setWordBBox: (bbox) => set({ wordBBox: bbox }),
 }));

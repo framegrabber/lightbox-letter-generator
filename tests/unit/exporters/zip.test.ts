@@ -8,6 +8,9 @@ describe("bundleAll", () => {
       [{ chars: "BURGER", stl: new ArrayBuffer(84) }],
       [],
       [],
+      [],
+      [],
+      [],
       "readme",
     );
     const zip = await JSZip.loadAsync(blob);
@@ -18,6 +21,9 @@ describe("bundleAll", () => {
     const blob = await bundleAll(
       [{ chars: "BURGER", stl: new ArrayBuffer(84) }],
       [{ chars: "BURGER", stl: new ArrayBuffer(84) }],
+      [],
+      [],
+      [],
       [],
       "readme",
     );
@@ -30,6 +36,9 @@ describe("bundleAll", () => {
       [{ chars: "BURGER", stl: new ArrayBuffer(84) }],
       [],
       [{ chars: "BURGER", svg: "<svg/>" }],
+      [],
+      [],
+      [],
       "readme",
     );
     const zip = await JSZip.loadAsync(blob);
@@ -50,6 +59,9 @@ describe("bundleAll", () => {
         { chars: "M", svg: "<svg/>" },
         { chars: "i", svg: "<svg/>" },
       ],
+      [],
+      [],
+      [],
       "readme",
     );
     const zip = await JSZip.loadAsync(blob);
@@ -73,6 +85,9 @@ describe("bundleAll", () => {
         { chars: "B", stl: new ArrayBuffer(84) },
       ],
       [],
+      [],
+      [],
+      [],
       "readme",
     );
     const zip = await JSZip.loadAsync(blob);
@@ -90,6 +105,9 @@ describe("bundleAll", () => {
       [{ chars: "?!", stl: new ArrayBuffer(84) }],
       [{ chars: "?!", stl: new ArrayBuffer(84) }],
       [{ chars: "?!", svg: "<svg/>" }],
+      [],
+      [],
+      [],
       "readme",
     );
     const zip = await JSZip.loadAsync(blob);
@@ -103,6 +121,9 @@ describe("bundleAll", () => {
       [{ chars: "Hi/?", stl: new ArrayBuffer(84) }],
       [],
       [],
+      [],
+      [],
+      [],
       "readme",
     );
     const zip = await JSZip.loadAsync(blob);
@@ -111,7 +132,7 @@ describe("bundleAll", () => {
 
   it("README content lands at the root", async () => {
     const readme = "Reproduce: http://example.com/?p=...\nText: BURGER";
-    const blob = await bundleAll([], [], [], readme);
+    const blob = await bundleAll([], [], [], [], [], [], readme);
     const zip = await JSZip.loadAsync(blob);
     const f = zip.file("README.txt");
     expect(f).toBeTruthy();
@@ -123,6 +144,9 @@ describe("bundleAll", () => {
       [{ chars: "M", stl: new ArrayBuffer(84) }],
       [{ chars: "M", stl: new ArrayBuffer(84) }],
       [{ chars: "M", svg: "<svg/>" }],
+      [],
+      [],
+      [],
       "readme",
     );
     const zip = await JSZip.loadAsync(blob);

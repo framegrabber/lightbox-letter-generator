@@ -1,4 +1,5 @@
 import type { GlyphContours } from "./types";
+import type { OuterEdges } from "./slice";
 
 export type CableHole = {
   x: number;
@@ -6,6 +7,7 @@ export type CableHole = {
   z: number;
   diameter: number;
   length: number;
+  kind: "boundary" | "power-entry-left" | "power-entry-right";
 };
 
 // Structural sub-type of LayoutEntry — we only need these two fields.
@@ -21,6 +23,7 @@ export type CableHoleParams = {
   cableHoleZ: number;
   cableHoleAtEnds: boolean;
   wallThickness: number;
+  outerEdges?: OuterEdges;
 };
 
 type XSpan = { minX: number; maxX: number };
@@ -90,7 +93,7 @@ export function computeCableHoles(
     const gap = b.minX - a.maxX;
     const x = (a.maxX + b.minX) / 2;
     const length = Math.max(Math.abs(gap) + 4 * wt, 4 * wt);
-    holes.push({ x, ...yzd, length });
+    holes.push({ x, ...yzd, length, kind: "boundary" });
   }
 
   // Power-entry cylinders at the outer ends.
@@ -100,8 +103,12 @@ export function computeCableHoles(
       const first = valid[0];
       const last = valid[valid.length - 1];
       const endLength = 4 * wt;
-      holes.push({ x: first.minX, ...yzd, length: endLength });
-      holes.push({ x: last.maxX, ...yzd, length: endLength });
+      if (params.outerEdges?.left !== false) {
+        holes.push({ x: first.minX, ...yzd, length: endLength, kind: "power-entry-left" });
+      }
+      if (params.outerEdges?.right !== false) {
+        holes.push({ x: last.maxX, ...yzd, length: endLength, kind: "power-entry-right" });
+      }
     }
   }
 

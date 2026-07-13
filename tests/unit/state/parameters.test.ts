@@ -49,4 +49,10 @@ describe("parameters store", () => {
     expect(DEFAULT_PARAMETERS.bulbHoleInset).toBe(10); // = DEFAULT_WALL_THICKNESS
     expect(DEFAULT_PARAMETERS.bulbHoleMaxCount).toBe(12);
   });
+
+  it("starts with maxPieceWidth disabled and no cuts", () => {
+    const state = useParameters.getState();
+    expect(state.maxPieceWidth).toBe(0);
+    expect(state.cuts).toEqual([]);
+  });
 });

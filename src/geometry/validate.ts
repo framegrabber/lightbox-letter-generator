@@ -112,5 +112,24 @@ export function validate(p: Parameters): ValidationResult {
     errors.push({ field: "bulbHoleMaxCount", message: "Bulb hole max count must be an integer ≥ 1" });
   }
 
+  if (!Number.isFinite(p.maxPieceWidth) || p.maxPieceWidth < 0) {
+    errors.push({ field: "maxPieceWidth", message: "Max piece width must be ≥ 0" });
+  }
+
+  if (Array.isArray(p.cuts)) {
+    for (const c of p.cuts) {
+      if (!Number.isFinite(c.x)) {
+        errors.push({ field: "cuts", message: "Cut x must be a finite number" });
+        break;
+      }
+      if (!Number.isFinite(c.angle) || c.angle <= -89 || c.angle >= 89) {
+        errors.push({ field: "cuts", message: "Cut angle must be strictly between -89° and +89°" });
+        break;
+      }
+    }
+  } else {
+    errors.push({ field: "cuts", message: "Cuts must be an array" });
+  }
+
   return errors.length === 0 ? { ok: true } : { ok: false, errors };
 }

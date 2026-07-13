@@ -1,5 +1,6 @@
 import { xExtentAtY } from "./cable-holes";
 import type { GlyphContours } from "./types";
+import type { OuterEdges } from "./slice";
 
 export type MountSlot = {
   x: number;
@@ -30,6 +31,7 @@ export type MountParams = {
   wallThickness: number;
   backThickness: number;
   backCavityDepth: number;
+  outerEdges?: OuterEdges;
 };
 
 // Slot positions are derived from the X-extent of letter material AT mountSlotY,
@@ -65,22 +67,25 @@ export function computeMounts(
   const leftSlotX = slice.minX + params.mountSlotXInset;
   const rightSlotX = slice.maxX - params.mountSlotXInset;
 
-  const slots: MountSlot[] = [
-    {
+  const slots: MountSlot[] = [];
+  if (params.outerEdges?.left !== false) {
+    slots.push({
       x: leftSlotX,
       y,
       shankDiameter: shank,
       headDiameter: head,
       slotLength,
-    },
-    {
+    });
+  }
+  if (params.outerEdges?.right !== false) {
+    slots.push({
       x: rightSlotX,
       y,
       shankDiameter: shank,
       headDiameter: head,
       slotLength,
-    },
-  ];
+    });
+  }
 
   if (params.backCavityDepth <= 0) {
     return { slots, tabs: [] };
@@ -95,24 +100,28 @@ export function computeMounts(
   const tabMinY = y - slotLength - halfHead - 2;
   const tabMaxY = y + 2;
   const eps = 0.01;
-  const tabs: MountTab[] = [
-    {
+  const tabs: MountTab[] = [];
+
+  if (params.outerEdges?.left !== false) {
+    tabs.push({
       minX: slice.minX - eps,
       maxX: leftSlotX + halfHead + 2,
       minY: tabMinY,
       maxY: tabMaxY,
       zBottom: 0,
       zTop: params.backThickness,
-    },
-    {
+    });
+  }
+  if (params.outerEdges?.right !== false) {
+    tabs.push({
       minX: rightSlotX - halfHead - 2,
       maxX: slice.maxX + eps,
       minY: tabMinY,
       maxY: tabMaxY,
       zBottom: 0,
       zTop: params.backThickness,
-    },
-  ];
+    });
+  }
 
   return { slots, tabs };
 }

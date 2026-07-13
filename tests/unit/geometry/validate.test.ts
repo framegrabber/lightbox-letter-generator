@@ -77,6 +77,8 @@ describe("connected-letters bounds", () => {
     bulbHoleSpacing: 30,
     bulbHoleInset: 10,
     bulbHoleMaxCount: 12,
+    maxPieceWidth: 0,
+    cuts: [] as { x: number; angle: number }[],
   };
 
   it("accepts zero defaults", () => {
@@ -138,6 +140,8 @@ describe("plexiTolerance bounds", () => {
     bulbHoleSpacing: 30,
     bulbHoleInset: 10,
     bulbHoleMaxCount: 12,
+    maxPieceWidth: 0,
+    cuts: [] as { x: number; angle: number }[],
   };
 
   it("accepts the default", () => {
@@ -195,6 +199,8 @@ describe("backCavityDepth bounds", () => {
     bulbHoleSpacing: 30,
     bulbHoleInset: 10,
     bulbHoleMaxCount: 12,
+    maxPieceWidth: 0,
+    cuts: [] as { x: number; angle: number }[],
   };
 
   it("accepts the default", () => {
@@ -242,6 +248,8 @@ describe("cableHole bounds", () => {
     bulbHoleSpacing: 30,
     bulbHoleInset: 10,
     bulbHoleMaxCount: 12,
+    maxPieceWidth: 0,
+    cuts: [] as { x: number; angle: number }[],
   };
 
   it("accepts the disabled default", () => {
@@ -295,6 +303,8 @@ describe("mount bounds", () => {
     bulbHoleSpacing: 30,
     bulbHoleInset: 10,
     bulbHoleMaxCount: 12,
+    maxPieceWidth: 0,
+    cuts: [] as { x: number; angle: number }[],
   };
 
   it("accepts the disabled default", () => {
@@ -373,6 +383,36 @@ describe("bulbHole bounds", () => {
 
   it("accepts all bulb-hole defaults", () => {
     const r = validate(DEFAULT_PARAMETERS);
+    expect(r.ok).toBe(true);
+  });
+});
+
+describe("build-volume slicing bounds", () => {
+  const ok = { ...DEFAULT_PARAMETERS, text: "HI" };
+
+  it("rejects maxPieceWidth < 0", () => {
+    const r = validate({ ...ok, maxPieceWidth: -1 });
+    expect(r.ok).toBe(false);
+    if (!r.ok) {
+      expect(r.errors.some((e: ValidationError) => e.field === "maxPieceWidth")).toBe(true);
+    }
+  });
+
+  it("accepts maxPieceWidth === 0 (feature disabled)", () => {
+    const r = validate({ ...ok, maxPieceWidth: 0 });
+    expect(r.ok).toBe(true);
+  });
+
+  it("rejects a cut angle outside (-89, +89)", () => {
+    const r = validate({ ...ok, cuts: [{ x: 100, angle: 90 }] });
+    expect(r.ok).toBe(false);
+    if (!r.ok) {
+      expect(r.errors.some((e: ValidationError) => e.field === "cuts")).toBe(true);
+    }
+  });
+
+  it("accepts cuts at the angle boundary just inside (-89, +89)", () => {
+    const r = validate({ ...ok, cuts: [{ x: 0, angle: 88.9 }, { x: 100, angle: -88.9 }] });
     expect(r.ok).toBe(true);
   });
 });

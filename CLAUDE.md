@@ -135,6 +135,18 @@ If the cavity itself collapses (e.g. wall thickness >= half the letter), the hel
 
 Pixel size of 1 mm is hardcoded in `bulb-holes.ts` as `SKELETON_PX_SIZE`; sub-mm placement error after the half-pixel sample offset is well below typical hole spacings. Skeleton tracing prefers 4-connected neighbours over diagonals so adjacent skeleton steps stay close in arc length — important for `bulbHoleSpacing` to mean what it says.
 
+## Slicing
+
+`maxPieceWidth` and `cuts` (in `state/parameters.ts`) drive the build-volume slicing step. Default `maxPieceWidth = 0` disables slicing. Slicing applies whenever `cuts.length > 0`, regardless of `maxPieceWidth`.
+
+Slicing takes any one `Component` and cuts it into N sub-components along user-defined vertical cut planes. Each sub-component flows through the existing `shell.ts` → plexi → cable-holes → bulb-holes → mounts pipeline unchanged. The export bundles **both** the full (assembled) geometry and the sliced pieces so the user can pick at print time.
+
+`src/geometry/slice.ts` is a pure helper: `sliceComponent` builds N+1 "strip" polygons (`CrossSection`s) from the cuts, clips them to a generous bounding rectangle, and intersects each with the component's `mergedContours`. It returns `pieces` with updated contours, `outerEdges` (booleans indicating if a piece is at the left/right word boundary), and `slice_...` warnings.
+
+When a piece is sliced, `outerEdges.left = false` or `outerEdges.right = false` suppresses power-entry cable holes and mount slots on that internal cut edge. Boundary cable holes between letters continue to straddle cuts — each adjacent piece carves its half of the cylinder, reconstituting the channel on glue-up.
+
+Joinery is pure butt + glue. No alignment pegs, dovetails, or lap joints in v1.
+
 ## `NumberField` behaviour
 
 Local string state lets the user clear the input or type intermediate values like `"5."` without the controlled value snapping back. Commits to `onChange` whenever the text parses to a finite number; snaps back to the prop value only on blur if unparseable. Don't simplify back to a plain controlled input — that brought back "I can't clear the field to retype".

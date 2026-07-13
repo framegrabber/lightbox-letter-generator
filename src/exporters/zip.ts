@@ -13,19 +13,26 @@ export type ShellEntry = { chars: string; stl: ArrayBuffer };
 export type PlexiStlEntry = { chars: string; stl: ArrayBuffer };
 export type PlexiSvgEntry = { chars: string; svg: string };
 
+export type SlicedShellEntry = ShellEntry & { parentSlot: number; sliceIndex: number; totalSlices: number };
+export type SlicedPlexiStlEntry = PlexiStlEntry & { parentSlot: number; sliceIndex: number; totalSlices: number };
+export type SlicedPlexiSvgEntry = PlexiSvgEntry & { parentSlot: number; sliceIndex: number; totalSlices: number };
+
 // Bundle one zip with three role-grouped folders plus a README at the root:
-//   stl/chars/NN_<chars>_char.stl   — printable letter shells
-//   stl/plexi/NN_<chars>_plexi.stl  — printable plexi inserts
-//   svg/NN_<chars>_plexi.svg        — laser-cut plexi cut sheets
+//   stl/chars/NN_<chars>_char.stl             — printable letter shells
+//   stl/chars/NN_<chars>_char_slice-K.stl     — sliced letter shells (K is 1-based)
+//   stl/plexi/NN_<chars>_plexi.stl            — printable plexi inserts
+//   stl/plexi/NN_<chars>_plexi_slice-K.stl    — sliced plexi inserts
+//   svg/NN_<chars>_plexi.svg                  — laser-cut plexi cut sheets
+//   svg/NN_<chars>_plexi_slice-K.svg          — sliced plexi cut sheets
 //
-// Filenames carry a literal _char or _plexi suffix so a file moved out of
-// its folder still self-describes. Slot index is the array position
-// (1-based, zero-padded). A component without a plexi just doesn't appear
-// in the plexi arrays — its shell still ships under stl/chars.
+// Slice index K is zero-padded only when totalSlices >= 10.
 export async function bundleAll(
   shells: ShellEntry[],
   plexiStls: PlexiStlEntry[],
   plexiSvgs: PlexiSvgEntry[],
+  slicedShells: SlicedShellEntry[],
+  slicedPlexiStls: SlicedPlexiStlEntry[],
+  slicedPlexiSvgs: SlicedPlexiSvgEntry[],
   readme: string,
 ): Promise<Blob> {
   const zip = new JSZip();
@@ -44,6 +51,34 @@ export async function bundleAll(
   });
   plexiSvgs.forEach((e, slot) => {
     const name = `${pad2(slot + 1)}_${safeFilenameFragment(e.chars, `component${slot + 1}`)}_plexi.svg`;
+    svgDir.file(name, e.svg);
+  });
+
+  const slicePad = (idx: number, total: number) => {
+    return total >= 10 ? idx.toString().padStart(2, "0") : idx.toString();
+  };
+
+  slicedShells.forEach((e) => {
+    const parent = pad2(e.parentSlot);
+    const chars = safeFilenameFragment(e.chars, `component${e.parentSlot}`);
+    const sliceStr = slicePad(e.sliceIndex, e.totalSlices);
+    const name = `${parent}_${chars}_char_slice-${sliceStr}.stl`;
+    stlChars.file(name, e.stl);
+  });
+
+  slicedPlexiStls.forEach((e) => {
+    const parent = pad2(e.parentSlot);
+    const chars = safeFilenameFragment(e.chars, `component${e.parentSlot}`);
+    const sliceStr = slicePad(e.sliceIndex, e.totalSlices);
+    const name = `${parent}_${chars}_plexi_slice-${sliceStr}.stl`;
+    stlPlexi.file(name, e.stl);
+  });
+
+  slicedPlexiSvgs.forEach((e) => {
+    const parent = pad2(e.parentSlot);
+    const chars = safeFilenameFragment(e.chars, `component${e.parentSlot}`);
+    const sliceStr = slicePad(e.sliceIndex, e.totalSlices);
+    const name = `${parent}_${chars}_plexi_slice-${sliceStr}.svg`;
     svgDir.file(name, e.svg);
   });
 

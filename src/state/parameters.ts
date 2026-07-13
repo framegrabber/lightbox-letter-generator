@@ -4,6 +4,11 @@ export type FontSource =
   | { kind: "bundled"; id: string }
   | { kind: "uploaded"; name: string; sha256: string };
 
+export type Cut = {
+  x: number;       // mm, in word-space X
+  angle: number;   // degrees, signed; 0 = vertical cut, +tilts top of the line to the right
+};
+
 export type Parameters = {
   text: string;
   fontSource: FontSource;
@@ -31,6 +36,8 @@ export type Parameters = {
   bulbHoleSpacing: number;
   bulbHoleInset: number;
   bulbHoleMaxCount: number;
+  maxPieceWidth: number;
+  cuts: Cut[];
 };
 
 const DEFAULT_LETTER_HEIGHT = 200;
@@ -64,6 +71,8 @@ export const DEFAULT_PARAMETERS: Parameters = {
   bulbHoleSpacing: 30,
   bulbHoleInset: DEFAULT_WALL_THICKNESS,
   bulbHoleMaxCount: 12,
+  maxPieceWidth: 0,
+  cuts: [],
 };
 
 type Store = Parameters & { set: (p: Partial<Parameters>) => void };

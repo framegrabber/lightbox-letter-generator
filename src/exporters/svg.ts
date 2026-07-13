@@ -60,6 +60,10 @@ export type LayerInputs = {
   wallThickness: number;
   insetWidth: number; // shelf width; lip = wallThickness − insetWidth
   plexiTolerance: number;
+  // Sliced cavity/plexi (full parent intersected with strip). Same role as in
+  // ShellInputs — keeps the rendered plexi SVG open at cut edges.
+  cavityContours?: GlyphContours;
+  plexiContours?: GlyphContours;
 };
 
 export async function buildLetterLayers(input: LayerInputs): Promise<LetterLayers | null> {
@@ -67,9 +71,13 @@ export async function buildLetterLayers(input: LayerInputs): Promise<LetterLayer
   const { CrossSection } = m;
 
   const outer = new CrossSection(input.contours, "NonZero");
-  const cavity = outer.offset(-input.wallThickness, "Round");
   const lipWidth = input.wallThickness - input.insetWidth;
-  const rabbetCut = outer.offset(-(lipWidth + input.plexiTolerance), "Round");
+  const cavity = input.cavityContours
+    ? new CrossSection(input.cavityContours, "NonZero")
+    : outer.offset(-input.wallThickness, "Round");
+  const rabbetCut = input.plexiContours
+    ? new CrossSection(input.plexiContours, "NonZero")
+    : outer.offset(-(lipWidth + input.plexiTolerance), "Round");
 
   if (cavity.isEmpty() || rabbetCut.isEmpty()) {
     outer.delete();

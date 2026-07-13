@@ -58,6 +58,8 @@ test("end-to-end: connected mode merges letters into one STL", async ({ page }) 
   await page.getByLabel("Letter height").fill("80");
   await page.getByLabel("Wall thickness").fill("3");
   await page.getByLabel("Inset width").fill("1.5");
+  // Collapsible sections: open Connectors to reach Letter overlap.
+  await page.locator(".collapsible-fieldset summary").filter({ hasText: "Connectors" }).click();
   // Pull H and i together far enough that their outlines overlap.
   // Anton (the bundled default font) at letterHeight=80 produces an "H"
   // whose advance leaves enough gap that an overlap of 30mm reliably
@@ -106,6 +108,8 @@ test("end-to-end: bulb holes feature on", async ({ page }) => {
   await page.getByLabel("Letter height").fill("80");
   await page.getByLabel("Wall thickness").fill("3");
   await page.getByLabel("Inset width").fill("1.5");
+  // Collapsible sections: open Bulb holes to reach its inputs.
+  await page.locator(".collapsible-fieldset summary").filter({ hasText: "Bulb holes" }).click();
   // Enable bulb holes; values chosen so the H's strokes get a few holes each.
   await page.getByLabel("Bulb hole diameter").fill("8");
   await page.getByLabel("Bulb hole spacing").fill("30");

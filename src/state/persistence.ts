@@ -79,6 +79,12 @@ export function migrate(raw: Record<string, unknown>): Partial<Parameters> {
   if (typeof out.bulbHoleMaxCount !== "number") {
     out.bulbHoleMaxCount = DEFAULT_PARAMETERS.bulbHoleMaxCount;
   }
+  if (typeof out.maxPieceWidth !== "number") {
+    out.maxPieceWidth = DEFAULT_PARAMETERS.maxPieceWidth;
+  }
+  if (!Array.isArray(out.cuts)) {
+    out.cuts = DEFAULT_PARAMETERS.cuts;
+  }
 
   return out as Partial<Parameters>;
 }
@@ -134,6 +140,8 @@ export function initPersistence(): void {
       bulbHoleSpacing: state.bulbHoleSpacing,
       bulbHoleInset: state.bulbHoleInset,
       bulbHoleMaxCount: state.bulbHoleMaxCount,
+      maxPieceWidth: state.maxPieceWidth,
+      cuts: state.cuts,
     };
     const json = JSON.stringify(ser);
     try {
