@@ -33,9 +33,3 @@ export async function removeUploadedFont(sha256: string): Promise<void> {
   const rest = (await listUploadedFonts()).filter((f) => f.sha256 !== sha256);
   await set(INDEX_KEY, rest);
 }
-
-// Still imported by FontPicker.tsx until Task 2 migrates it to
-// registerUploadedFont; deleted there.
-export async function cacheFont(sha256: string, buffer: ArrayBuffer): Promise<void> {
-  await set(PREFIX + sha256, buffer);
-}
