@@ -29,7 +29,7 @@ npm run lint     # ESLint flat config
 - `src/exporters/` — `stl.ts` (binary STL writer), `svg.ts` (`polygonsToSVG` + `buildLetterLayers`), `zip.ts` (single `bundleAll`), `manifest.ts` (now `buildReadme`, name kept for history).
 - `src/state/` — `parameters.ts`, `ui.ts`, `persistence.ts` (URL + localStorage with migration).
 - `src/ui/` — React components, three.js preview, controls panel.
-- `src/fonts/` — bundled font registry, opentype loader, IndexedDB cache for uploaded fonts.
+- `src/fonts/` — bundled font registry, opentype loader, IndexedDB cache for uploaded fonts (`font:<sha256>` byte entries + a `font-index` registry of `{sha256, name, addedAt}` so uploads persist in the picker and can be removed).
 - `tests/unit/`, `tests/e2e/`, `tests/fixtures/fonts/Inter-Regular.ttf`.
 
 ## Coordinate system
@@ -211,6 +211,7 @@ lightbox-<text>-<localIso>.zip
 - Mounting-features feature spec: `docs/superpowers/specs/2026-06-10-mounting-features-design.md` (current with code).
 - Viewer-improvements feature spec: `docs/superpowers/specs/2026-06-11-viewer-improvements-design.md` (current with code).
 - Bulb-holes feature spec: `docs/superpowers/specs/2026-06-11-bulb-holes-design.md` (current with code).
+- Uploaded-font-library feature spec: `docs/superpowers/specs/2026-07-13-uploaded-font-library-design.md` (current with code).
 - Implementation plan in `docs/superpowers/plans/` is **historical** — frozen at v1, contains stale references (e.g. `rabbetLipWidth`). Treat as an artifact; don't update.
 
 ## Working with this code
