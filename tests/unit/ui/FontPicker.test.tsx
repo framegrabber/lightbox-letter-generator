@@ -16,12 +16,24 @@ vi.mock("../../../src/fonts/cache", () => ({
   getCachedFont: vi.fn(async () => undefined),
 }));
 
+vi.mock("../../../src/fonts/load", () => ({
+  parseFontBuffer: vi.fn(async () => ({ unitsPerEm: 1000 })),
+  sha256OfBuffer: vi.fn(async () => SHA_UPLOAD),
+}));
+
 import { FontPicker } from "../../../src/ui/FontPicker";
 import { useParameters, DEFAULT_PARAMETERS } from "../../../src/state/parameters";
-import { registerUploadedFont } from "../../../src/fonts/cache";
+import { registerUploadedFont, removeUploadedFont } from "../../../src/fonts/cache";
 
 const SHA_A = "a".repeat(64);
 const SHA_B = "b".repeat(64);
+const SHA_UPLOAD = "c".repeat(64);
+
+function makeFontFile(): File {
+  return new File([new ArrayBuffer(8)], "MyUpload.ttf", {
+    type: "application/font-sfnt",
+  });
+}
 
 describe("FontPicker uploaded-font library", () => {
   beforeEach(() => {
@@ -98,5 +110,41 @@ describe("FontPicker uploaded-font library", () => {
       expect.objectContaining({ sha256: SHA_B, name: "Old.ttf" }),
     );
     expect(await screen.findByRole("option", { name: "Old.ttf" })).toHaveValue(SHA_B);
+  });
+
+  it("alerts and leaves fontSource unchanged when registerUploadedFont rejects", async () => {
+    const alertSpy = vi.spyOn(window, "alert").mockImplementation(() => {});
+    vi.mocked(registerUploadedFont).mockRejectedValueOnce(new Error("quota exceeded"));
+    const { container } = render(<FontPicker />);
+    await waitFor(() => expect(screen.queryByRole("group", { name: "Uploaded" })).not.toBeInTheDocument());
+
+    const input = container.querySelector('input[type="file"]') as HTMLInputElement;
+    fireEvent.change(input, { target: { files: [makeFontFile()] } });
+
+    await waitFor(() => expect(alertSpy).toHaveBeenCalled());
+    expect(alertSpy.mock.calls[0]?.[0]).toMatch(/Could not save font/);
+    expect(useParameters.getState().fontSource).toEqual(DEFAULT_PARAMETERS.fontSource);
+    expect(screen.queryByRole("option", { name: "MyUpload.ttf" })).not.toBeInTheDocument();
+    alertSpy.mockRestore();
+  });
+
+  it("alerts and leaves fontSource unchanged when removeUploadedFont rejects", async () => {
+    const alertSpy = vi.spyOn(window, "alert").mockImplementation(() => {});
+    registry.set(SHA_A, { sha256: SHA_A, name: "MyFont.ttf", addedAt: 1 });
+    useParameters.setState({ fontSource: { kind: "uploaded", name: "MyFont.ttf", sha256: SHA_A } });
+    vi.mocked(removeUploadedFont).mockRejectedValueOnce(new Error("IndexedDB unavailable"));
+    render(<FontPicker />);
+    const removeBtn = await screen.findByRole("button", { name: "Remove uploaded font" });
+    fireEvent.click(removeBtn);
+
+    await waitFor(() => expect(alertSpy).toHaveBeenCalled());
+    expect(alertSpy.mock.calls[0]?.[0]).toMatch(/Could not remove font/);
+    expect(useParameters.getState().fontSource).toEqual({
+      kind: "uploaded",
+      name: "MyFont.ttf",
+      sha256: SHA_A,
+    });
+    expect(screen.getByRole("option", { name: "MyFont.ttf" })).toBeInTheDocument();
+    alertSpy.mockRestore();
   });
 });

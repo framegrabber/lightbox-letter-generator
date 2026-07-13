@@ -45,14 +45,24 @@ export function FontPicker() {
       return;
     }
     const sha = await sha256OfBuffer(buf);
-    await registerUploadedFont({ sha256: sha, name: file.name, addedAt: Date.now() }, buf);
-    setUploads(await listUploadedFonts());
+    try {
+      await registerUploadedFont({ sha256: sha, name: file.name, addedAt: Date.now() }, buf);
+      setUploads(await listUploadedFonts());
+    } catch (err) {
+      alert(`Could not save font: ${(err as Error).message}`);
+      return;
+    }
     set({ fontSource: { kind: "uploaded", name: file.name, sha256: sha } });
   }
 
   async function handleRemove(sha256: string) {
-    await removeUploadedFont(sha256);
-    setUploads(await listUploadedFonts());
+    try {
+      await removeUploadedFont(sha256);
+      setUploads(await listUploadedFonts());
+    } catch (err) {
+      alert(`Could not remove font: ${(err as Error).message}`);
+      return;
+    }
     set({ fontSource: DEFAULT_PARAMETERS.fontSource });
   }
 
